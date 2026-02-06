@@ -1,0 +1,75 @@
+# =========================
+# Go Build Outputs
+# =========================
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+
+# Binary builds
+/main
+/bin/
+dist/
+build/
+
+# Go workspace file
+go.work
+go.work.sum
+
+# =========================
+# Dependency / Vendor
+# =========================
+vendor/
+
+# =========================
+# Environment Variables
+# =========================
+.env
+.env.local
+.env.production
+.env.dev
+
+# Keep example file
+!.env.example
+
+# =========================
+# Logs
+# =========================
+*.log
+logs/
+
+# =========================
+# OS / Editor Junk
+# =========================
+.DS_Store
+Thumbs.db
+
+# VS Code
+.vscode/
+!.vscode/extensions.json
+
+# IntelliJ / GoLand
+.idea/
+
+# =========================
+# Docker Stuff
+# =========================
+*.pid
+docker-data/
+postgres-data/
+redis-data/
+
+# =========================
+# Testing + Coverage
+# =========================
+coverage.out
+*.test
+
+# =========================
+# Temporary Files
+# =========================
+tmp/
+temp/
+*.swp
+*.swo

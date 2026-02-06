@@ -1,0 +1,1 @@
+//Append + load events from the queue to the event store (Postgress) for durability and later processing by projections

@@ -1,0 +1,1 @@
+//Real model updator (CQRS projection)

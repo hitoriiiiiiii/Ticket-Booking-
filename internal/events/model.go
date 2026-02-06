@@ -1,0 +1,1 @@
+//Event structures and definitions (for events emitted by the booking service and consumed by the projection handlers)
