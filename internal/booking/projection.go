@@ -1,1 +1,3 @@
-//Real model updator (CQRS projection)
+package booking
+
+// Real model updator (CQRS projection)
