@@ -49,12 +49,17 @@ func main() {
 	// Booking Handler
 	bookingHandler := &booking.Handler{EventStore: eventStore}
 
+	//Projection
+	projection := &booking.ReservationProjection{DB: pool}
+	go projection.Run()
+
 	// Routes
 	r.POST("/reserve", bookingHandler.ReserveTicket)
 	r.GET("/health", booking.HealthCheck)
     r.GET("/events", bookingHandler.GetEvents)
-    r.POST("/cancel", bookingHandler.CancelTicket)
-    r.GET("/availability/:seat_id", bookingHandler.CheckAvailability)
+	r.POST("/cancel", bookingHandler.CancelTicket)
+	r.GET("/availability/:seat_id", bookingHandler.CheckAvailability)
+	r.POST("/confirm", bookingHandler.ConfirmTicket)
 
 	// Server Port
 	port := os.Getenv("PORT")

@@ -1,4 +1,3 @@
-#Docker 
 version: "3.9"
 
 services:
@@ -14,3 +13,51 @@ services:
       - "5433:5432"
     volumes:
       - ./postgres-data:/var/lib/postgresql/data
+    networks:
+      - ticket-booking-network
+
+  redis:
+    image: redis:7-alpine
+    container_name: ticket-booking-redis
+    restart: always
+    ports:
+      - "6379:6379"
+    networks:
+      - ticket-booking-network
+
+  api:
+    build:
+      context: .
+      dockerfile: docker/DockerFile.api
+    container_name: ticket-booking-api
+    restart: always
+    environment:
+      DATABASE_URL: "postgres://ticket:ticket123@postgres:5432/ticket_db?sslmode=disable"
+      REDIS_URL: "redis://redis:6379"
+      PORT: "8080"
+    ports:
+      - "8080:8080"
+    depends_on:
+      - postgres
+      - redis
+    networks:
+      - ticket-booking-network
+
+  worker:
+    build:
+      context: .
+      dockerfile: docker/DockerFile.worker
+    container_name: ticket-booking-worker
+    restart: always
+    environment:
+      DATABASE_URL: "postgres://ticket:ticket123@postgres:5432/ticket_db?sslmode=disable"
+      REDIS_URL: "redis://redis:6379"
+    depends_on:
+      - postgres
+      - redis
+    networks:
+      - ticket-booking-network
+
+networks:
+  ticket-booking-network:
+    driver: bridge

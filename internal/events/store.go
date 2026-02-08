@@ -20,12 +20,11 @@ func (s *Store) Append(eventType string, aggregateID string, payload interface{}
 		return err
 	}
 
-	_, err = s.DB.Exec(
-		context.Background(),
-		`INSERT INTO events (aggregate_id, event_type, payload)
-		 VALUES ($1, $2, $3)`,
-		aggregateID, eventType, data,
-	)
+	// Insert event record
+	_, err = s.DB.Exec(context.Background(), `
+		INSERT INTO events (aggregate_id, event_type, payload)
+		VALUES ($1, $2, $3)
+	`, aggregateID, eventType, data)
 
 	if err != nil {
 		log.Printf("❌ Failed to append event: %v", err)
@@ -36,18 +35,22 @@ func (s *Store) Append(eventType string, aggregateID string, payload interface{}
 	return nil
 }
 
-func (s *Store) IsSeatReserved(seatID string) (bool, error){
+func (s *Store) IsSeatReserved(seatID string) (bool, error) {
+
 	var count int
 
-	err := s.DB.QueryRow(
-		context.Background(),
-		`SELECT COUNT(*) FROM events WHERE event_type = 'TicketReserved' AND aggregate_id = $1`,
-		seatID,
-	).Scan(&count)
+	err := s.DB.QueryRow(context.Background(), `
+		SELECT COUNT(*)
+		FROM reservations
+		WHERE seat_id = $1
+		  AND status = 'ACTIVE'
+		  AND expires_at > NOW()
+	`, seatID).Scan(&count)
 
 	if err != nil {
 		return false, err
 	}
+
 	return count > 0, nil
 }
 
