@@ -52,6 +52,9 @@ func main() {
 	// Routes
 	r.POST("/reserve", bookingHandler.ReserveTicket)
 	r.GET("/health", booking.HealthCheck)
+    r.GET("/events", bookingHandler.GetEvents)
+    r.POST("/cancel", bookingHandler.CancelTicket)
+    r.GET("/availability/:seat_id", bookingHandler.CheckAvailability)
 
 	// Server Port
 	port := os.Getenv("PORT")
