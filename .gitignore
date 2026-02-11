@@ -12,6 +12,8 @@
 /bin/
 dist/
 build/
+node_modules/
+postgres-data/
 
 # Go workspace file
 go.work

@@ -1,29 +1,37 @@
-version: "3.9"
-
 services:
   postgres:
     image: postgres:15
     container_name: ticket-booking-db
     restart: always
     environment:
-      POSTGRES_USER: "ticket"
-      POSTGRES_PASSWORD: "ticket123"
-      POSTGRES_DB: "ticket_db"
+      POSTGRES_USER: "${DB_USER}"
+      POSTGRES_PASSWORD: "${DB_PASSWORD}"
+      POSTGRES_DB: "${DB_NAME}"
     ports:
-      - "5433:5432"
+      - '5433:5432'   # host:container
     volumes:
       - ./postgres-data:/var/lib/postgresql/data
     networks:
       - ticket-booking-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
 
   redis:
     image: redis:7-alpine
     container_name: ticket-booking-redis
     restart: always
     ports:
-      - "6379:6379"
+      - '6379:6379'
     networks:
       - ticket-booking-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
 
   api:
     build:
@@ -31,15 +39,18 @@ services:
       dockerfile: docker/DockerFile.api
     container_name: ticket-booking-api
     restart: always
+    env_file:
+      - .env
     environment:
-      DATABASE_URL: "postgres://ticket:ticket123@postgres:5432/ticket_db?sslmode=disable"
-      REDIS_URL: "redis://redis:6379"
-      PORT: "8080"
+      DATABASE_URL: "postgres://${DB_USER}:${DB_PASSWORD}@${DB_HOST}:${DB_PORT}/${DB_NAME}?sslmode=${DB_SSLMODE}"
+      REDIS_URL: "redis://${REDIS_HOST}:${REDIS_PORT}"
     ports:
-      - "8080:8080"
+      - "${PORT}:8080"
     depends_on:
-      - postgres
-      - redis
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
     networks:
       - ticket-booking-network
 
@@ -49,12 +60,16 @@ services:
       dockerfile: docker/DockerFile.worker
     container_name: ticket-booking-worker
     restart: always
+    env_file:
+      - .env
     environment:
-      DATABASE_URL: "postgres://ticket:ticket123@postgres:5432/ticket_db?sslmode=disable"
-      REDIS_URL: "redis://redis:6379"
+      DATABASE_URL: "postgres://${DB_USER}:${DB_PASSWORD}@${DB_HOST}:${DB_PORT}/${DB_NAME}?sslmode=${DB_SSLMODE}"
+      REDIS_URL: "redis://${REDIS_HOST}:${REDIS_PORT}"
     depends_on:
-      - postgres
-      - redis
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
     networks:
       - ticket-booking-network
 

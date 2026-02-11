@@ -6,6 +6,7 @@ import (
 	"context"
 	"encoding/json"
 	"log"
+	"time"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -16,13 +17,17 @@ type ReservationProjection struct {
 }
 
 func (p *ReservationProjection) Run() {
+	// Wait a bit for database to be ready
+	time.Sleep(5 * time.Second)
+
 	// Get last processed event ID
 	var lastEventID *string
 	err := p.DB.QueryRow(context.Background(),
 		"SELECT last_event_id FROM projection_state WHERE id = 1",
 	).Scan(&lastEventID)
 	if err != nil {
-		log.Fatal("Failed to get projection state:", err)
+		log.Println("Failed to get projection state:", err)
+		return
 	}
 
 	// Build query for incremental processing
