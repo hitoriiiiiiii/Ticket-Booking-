@@ -11,6 +11,8 @@ import (
 	"github.com/hitorii/ticket-booking/internal/booking"
 	"github.com/hitorii/ticket-booking/internal/db"
 	"github.com/hitorii/ticket-booking/internal/events"
+	"github.com/hitorii/ticket-booking/internal/movie"
+	"github.com/hitorii/ticket-booking/internal/show"
 	"github.com/hitorii/ticket-booking/internal/user"
 )
 
@@ -57,6 +59,13 @@ func main() {
 	// User Handler
 	userHandler := &user.Handler{DB: pool}
 
+	// Movie Handler
+	movieHandler := &movie.Handler{DB: pool}
+
+	// Shows Handler
+	showService := show.NewService(pool)
+	showHandler := show.NewHandler(showService)
+
 	//Projection
 	projection := &booking.ReservationProjection{DB: pool}
 	go projection.Run()
@@ -64,13 +73,22 @@ func main() {
 	// Routes
 	r.POST("/reserve", bookingHandler.ReserveTicket)
 	r.GET("/health", booking.HealthCheck)
-    r.GET("/events", bookingHandler.GetEvents)
+    r.GET("/events", bookingHandler.GetEvents)// Admin endpoint to view events
+    //booking
 	r.POST("/cancel", bookingHandler.CancelTicket)
 	r.GET("/availability/:seat_id", bookingHandler.CheckAvailability)
 	r.POST("/confirm", bookingHandler.ConfirmTicket)
+	//user
 	r.POST("/users/register", userHandler.Register)
 	r.POST("/users/login", userHandler.Login)
 	r.GET("/users", userHandler.ListUsers)
+	//movie
+	r.GET("/movies", movieHandler.GetMovies)
+	r.GET("/movies/:id", movieHandler.GetMovie)
+	r.POST("/movies", movieHandler.CreateMovie)
+	//shows
+	r.GET("/shows", showHandler.GetShows)
+    r.POST("/shows", showHandler.CreateShow)
 
 	// Server Port
 	port := os.Getenv("PORT")

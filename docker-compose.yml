@@ -11,6 +11,7 @@ services:
       - '5433:5432'   # host:container
     volumes:
       - ./postgres-data:/var/lib/postgresql/data
+      - ./migrations:/migrations
     networks:
       - ticket-booking-network
     healthcheck:
@@ -44,8 +45,9 @@ services:
     environment:
       DATABASE_URL: "postgres://${DB_USER}:${DB_PASSWORD}@${DB_HOST}:${DB_PORT}/${DB_NAME}?sslmode=${DB_SSLMODE}"
       REDIS_URL: "redis://${REDIS_HOST}:${REDIS_PORT}"
+      PORT: "8080"
     ports:
-      - "${PORT}:8080"
+      - "8081:8081"
     depends_on:
       postgres:
         condition: service_healthy
