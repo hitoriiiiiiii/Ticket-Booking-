@@ -3,29 +3,6 @@
 A high-performance backend for ticket booking applications, inspired by platforms like BookMyShow. Designed to handle 50K+ concurrent users with robust concurrency control and scalability.
 
 ---
-## Features
-
-- Users browse movies
-- Select theater + showtime
-- Pick seats
-- Seat lock for few minutes
-- Payment
-- Booking confirmation
-- Prevent double booking
-- Handle 50K+ concurrent users
-
-## Services
-
-| Service              | Responsibility    |
-| -------------------- | ----------------- |
-| User Service         | Auth, profiles    |
-| Movie Service        | Movies, metadata  |
-| Show Service         | Showtimes         |
-| Booking Service      | Reserve + confirm |
-| Payment Service      | Payments          |
-| Notification Service | SMS/email         |
-
----
 ## 🚀 System Design Technologies
 
 ### 🏗 Backend Architecture
