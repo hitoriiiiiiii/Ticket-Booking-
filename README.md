@@ -59,22 +59,136 @@ internal/
 > **Command Query Responsibility Segregation**
 
 ```
-┌─────────────────────────────────────────────────────────────┐
-│                        CQRS Architecture                    │
-├──────────────────────────┬──────────────────────────────────┤
-│     COMMAND SIDE         │         QUERY SIDE               │
-│  (Write Operations)      │    (Read Operations)             │
-├──────────────────────────┼──────────────────────────────────┤
-│ • Seat Booking           │ • Fetch Shows                    │
-│ • Payment Processing    │ • Seat Availability              │
-│ • Reservations           │ • User Bookings                  │
-│ • Event Sourcing         │ • Projections                    │
-└──────────────────────────┴──────────────────────────────────┘
+┌─────────────────────────────────────────────────────────────────────────────────────────────────────┐
+│                                    CQRS ARCHITECTURE                                                │
+├───────────────────────────┬─────────────────────────────┬──────────────────────────────────────────┤
+│      COMMANDS             │      EVENT STORE            │           QUERIES                        │
+│   (Write Side)            │                             │         (Read Side)                     │
+├───────────────────────────┼─────────────────────────────┼──────────────────────────────────────────┤
+│                           │                             │                                          │
+│   ┌─────────────┐         │   ┌─────────────────┐       │   ┌─────────────┐                        │
+│   │ Seat        │         │   │  events table   │       │   │ Fetch Shows │                        │
+│   │ Reservation │────────────►│                 │       │   │             │                        │
+│   └─────────────┘         │   │ • aggregate_id  │       │   └──────┬──────┘                        │
+│           │               │   │ • event_type   │       │          │                               │
+│           ▼               │   │ • payload      │       │          ▼                               │
+│   ┌─────────────┐         │   │ • created_at   │       │   ┌─────────────┐                        │
+│   │  Payment    │────────────►│                 │       │   │   Seat      │                        │
+│   │  Processing │         │   └────────┬────────┘       │   │ Availability│                        │
+│   └─────────────┘         │            │                 │   └──────┬──────┘                        │
+│           │               │            │                 │          │                               │
+│           ▼               │            ▼                 │          ▼                               │
+│   ┌─────────────┐         │   ┌─────────────────┐       │   ┌─────────────┐                        │
+│   │ Reservation │         │   │ Projection      │       │   │    User     │                        │
+│   │ Confirmation│         │   │ Worker          │       │   │  Bookings   │                        │
+│   └─────────────┘         │   └────────┬────────┘       │   └─────────────┘                        │
+│                           │            │                 │                                          │
+└───────────────────────────┼────────────┼─────────────────┼──────────────────────────────────────────┘
+                            │            │                 │
+                            │            ▼                 │
+                            │   ┌─────────────────┐       │
+                            │   │ Reservation     │       │
+                            │   │ Projection      │       │
+                            │   │                 │       │
+                            │   │ • TicketReserved│       │
+                            │   │ • TicketCancel  │       │
+                            │   └────────┬────────┘       │
+                            │            │                 │
+                            │            ▼                 │
+                            │   ┌─────────────────┐       │
+                            │   │   Read Model    │       │
+                            │   │ (reservations)  │       │
+                            │   │                 │       │
+                            │   │ • seat_id       │       │
+                            │   │ • user_id       │       │
+                            │   │ • status        │       │
+                            │   └─────────────────┘       │
+                            │                             │
+                            └─────────────────────────────┘
 ```
 
-- **Command Side**: Handles seat booking, payment, reservation updates
-- **Query Side**: Optimized for fetching shows, seat availability, user bookings
-- **Benefits**: Improves performance under heavy concurrent traffic
+**CQRS Flow:**
+
+1. **Commands (Write Side)**: User actions like seat reservation, payment processing are handled as commands
+2. **Event Store**: Commands are stored as events in the `events` table (event sourcing)
+3. **Projection Worker**: `ReservationProjection` reads events from the event store and updates the read model
+4. **Read Model**: The `reservations` table is updated with the latest booking status
+5. **Queries (Read Side)**: Read operations like fetching shows, checking seat availability, and retrieving user bookings query the optimized read model
+
+- **Command Side**: Handles seat booking, payment, reservation updates → writes to Event Store
+- **Query Side**: Optimized for fetching shows, seat availability, user bookings → reads from Read Model
+- **Benefits**: Improves performance under heavy concurrent traffic, separates read/write concerns
+
+### CQRS Data Flow Diagram
+
+```
+┌─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐
+│                                                CQRS DATA FLOW                                                             │
+├─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┤
+│                                                                                                                                 │
+│    ┌──────────────────────┐                                    ┌──────────────────────┐                                    │
+│    │      COMMAND API     │                                    │      QUERY API      │                                    │
+│    │  (Reserve/Cancel)    │                                    │   (Availability)    │                                    │
+│    └──────────┬───────────┘                                    └──────────┬───────────┘                                    │
+│               │                                                        │                                                │
+│               │  Write DB (Postgres)                                  │  Read DB (Postgres Replica)                   │
+│               ▼                                                        ▼                                                │
+│    ┌──────────────────────┐                                    ┌──────────────────────┐                                    │
+│    │    Primary DB        │                                    │   Read Replica      │                                    │
+│    │  (Write Operations) │                                    │  (Read Operations)  │                                    │
+│    │  • Reservations     │                                    │  • Shows            │                                    │
+│    │  • Payments         │                                    │  • Seat Availability│                                    │
+│    │  • Users            │                                    │  • User Bookings    │                                    │
+│    └──────────┬───────────┘                                    └──────────────────────┘                                    │
+│               │                                                                                                            │
+│               │                                                                                                            │
+│               ▼                                                                                                            │
+│    ┌──────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐    │
+│    │                                         KAFKA TOPIC: booking.events                                                │    │
+│    ├──────────────────────────────────────────────────────────────────────────────────────────────────────────────────┤    │
+│    │                                                                                                                                  │
+│    │   ┌──────────────────┐    ┌──────────────────┐    ┌──────────────────┐    ┌──────────────────┐                   │    │
+│    │   │ ReservationCreated│    │  SeatLocked      │    │BookingConfirmed  │    │  SeatReleased    │                   │    │
+│    │   └────────┬─────────┘    └────────┬─────────┘    └────────┬─────────┘    └────────┬─────────┘                   │    │
+│    │            │                      │                      │                      │                             │    │
+│    │            ▼                      ▼                      ▼                      ▼                             │    │
+│    │   ┌────────────────────────────────────────────────────────────────────────────────────────────────────────┐   │    │
+│    │   │                                    EVENT STORE                                                      │   │    │
+│    │   │   • aggregate_id    • event_type    • payload (JSON)    • created_at                              │   │    │
+│    │   └────────────────────────────────────────────────────────────────────────────────────────────────────────┘   │    │
+│    │                                                                                                            │    │
+│    └──────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘    │
+│               │                                                                                                            │
+│               │                                                                                                            │
+│               ▼                                                                                                            │
+│    ┌──────────────────────┐                                                                                                │
+│    │  PROJECTION WORKER   │                                                                                                │
+│    │    (Consumer)        │                                                                                                │
+│    ├──────────────────────┤                                                                                                │
+│    │  • Reads events      │                                                                                                │
+│    │  • Updates read model│                                                                                                │
+│    │  • Transforms data   │                                                                                                │
+│    └──────────┬───────────┘                                                                                                │
+│               │                                                                                                            │
+│               │  Updates Read DB                                                                                           │
+│               ▼                                                                                                            │
+│    ┌──────────────────────┐                                                                                                │
+│    │      READ DB         │                                                                                                │
+│    │  (Projections)       │                                                                                                │
+│    │  • seat_availability │                                                                                                │
+│    │  • user_bookings     │                                                                                                │
+│    │  • show_stats        │                                                                                                │
+│    └──────────────────────┘                                                                                                │
+│                                                                                                                                 │
+└─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘
+```
+
+**Data Flow:**
+1. **Command API** handles Reserve/Cancel operations → writes to Primary DB (Postgres)
+2. **Query API** handles Availability queries → reads from Read Replica (Postgres)
+3. **Events** are published to Kafka Topic: `booking.events`
+4. **Projection Worker** consumes events from Kafka and updates the Read DB
+5. **Read DB** stores projections for optimized query performance
 
 ---
 
@@ -465,7 +579,7 @@ cd ticket-booking
 docker-compose up -d
 
 # Access API
-http://localhost:8081
+http://localhost:8080
 
 # Access database
 docker exec -it ticket-booking-db psql -U ticket -d ticket_db
