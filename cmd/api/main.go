@@ -15,7 +15,7 @@ import (
 	"github.com/hitorii/ticket-booking/internal/payments"
 	"github.com/hitorii/ticket-booking/internal/show"
 	"github.com/hitorii/ticket-booking/internal/user"
-	"github.com/hitorii/ticket-booking/internal/notifications"
+	"github.com/hitorii/ticket-booking/internal/notification"
 )
 
 func main() {
