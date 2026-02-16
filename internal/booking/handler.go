@@ -179,10 +179,10 @@ func (h *Handler) GetEvents(c *gin.Context) {
 		rows.Scan(&aggID, &eventType, &payload, &createdAt)
 
 		eventsList = append(eventsList, gin.H{
-			"seat_id":  aggID,
-			"type":     eventType,
-			"payload":  string(payload),
-			"time":     createdAt,
+			"seat_id": aggID,
+			"type":    eventType,
+			"payload": string(payload),
+			"time":    createdAt,
 		})
 	}
 

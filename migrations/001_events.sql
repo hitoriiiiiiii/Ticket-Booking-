@@ -37,6 +37,26 @@ CREATE TABLE shows (
     end_time TIMESTAMP NOT NULL
 );
 
+CREATE TABLE payments (
+    id UUID PRIMARY KEY,
+    booking_id UUID NOT NULL,
+    user_id UUID NOT NULL,
+    amount INT NOT NULL,
+    status VARCHAR(20) DEFAULT 'PENDING',
+    provider VARCHAR(50),
+    transaction_id VARCHAR(100),
+    created_at TIMESTAMP DEFAULT NOW()
+);
+
+CREATE TABLE notifications (
+    id UUID PRIMARY KEY,
+    user_id UUID NOT NULL,
+    type VARCHAR(50),
+    message TEXT,
+    status VARCHAR(20) DEFAULT 'PENDING',
+    created_at TIMESTAMP DEFAULT NOW()
+);
+
 
 INSERT INTO projection_state (last_event_id) VALUES (NULL);
 

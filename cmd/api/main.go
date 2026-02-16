@@ -12,8 +12,10 @@ import (
 	"github.com/hitorii/ticket-booking/internal/db"
 	"github.com/hitorii/ticket-booking/internal/events"
 	"github.com/hitorii/ticket-booking/internal/movie"
+	"github.com/hitorii/ticket-booking/internal/payments"
 	"github.com/hitorii/ticket-booking/internal/show"
 	"github.com/hitorii/ticket-booking/internal/user"
+	"github.com/hitorii/ticket-booking/internal/notifications"
 )
 
 func main() {
@@ -62,6 +64,11 @@ func main() {
 	// Movie Handler
 	movieHandler := &movie.Handler{DB: pool}
 
+	// Payment Handler
+	paymentRepo := payments.NewRepository(pool)
+	paymentService := payments.NewService(paymentRepo)
+	paymentHandler := payments.NewHandler(paymentService)
+
 	// Shows Handler
 	showService := show.NewService(pool)
 	showHandler := show.NewHandler(showService)
@@ -73,8 +80,8 @@ func main() {
 	// Routes
 	r.POST("/reserve", bookingHandler.ReserveTicket)
 	r.GET("/health", booking.HealthCheck)
-    r.GET("/events", bookingHandler.GetEvents)// Admin endpoint to view events
-    //booking
+	r.GET("/events", bookingHandler.GetEvents) // Admin endpoint to view events
+	//booking
 	r.POST("/cancel", bookingHandler.CancelTicket)
 	r.GET("/availability/:seat_id", bookingHandler.CheckAvailability)
 	r.POST("/confirm", bookingHandler.ConfirmTicket)
@@ -88,7 +95,14 @@ func main() {
 	r.POST("/movies", movieHandler.CreateMovie)
 	//shows
 	r.GET("/shows", showHandler.GetShows)
-    r.POST("/shows", showHandler.CreateShow)
+	r.POST("/shows", showHandler.CreateShow)
+	//payments
+	r.POST("/payments/initiate", paymentHandler.InitiatePayment)
+	r.POST("/payments/verify", paymentHandler.VerifyPayment)
+	//notifications
+	notificationRepo := notifications.NewRepository(pool)
+	notificationHandler := notifications.NewHandler(notificationRepo)
+	r.GET("/notifications/:user_id", notificationHandler.GetUserNotifications)
 
 	// Server Port
 	port := os.Getenv("PORT")

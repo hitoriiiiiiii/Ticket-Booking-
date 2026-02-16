@@ -1,4 +1,4 @@
-//Handles the go code for the user handler
+// Handles the go code for the user handler
 package user
 
 import (
@@ -8,8 +8,8 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
-	"golang.org/x/crypto/bcrypt"
 	"github.com/jackc/pgx/v5/pgxpool"
+	"golang.org/x/crypto/bcrypt"
 )
 
 type Handler struct {
@@ -116,4 +116,3 @@ func (h *Handler) ListUsers(c *gin.Context) {
 
 	c.JSON(http.StatusOK, users)
 }
-
