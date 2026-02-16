@@ -50,7 +50,8 @@ func main() {
 	log.Println("Using DATABASE_URL:", databaseURL)
 
 	// Connect DB pool
-	pool := db.Connect(databaseURL)
+	cmdDB := db.Connect(os.Getenv("COMMAND_DATABASE_URL"))
+    queryDB := db.Connect(os.Getenv("QUERY_DATABASE_URL"))
 
 	// Event Store
 	eventStore := &events.Store{DB: pool}

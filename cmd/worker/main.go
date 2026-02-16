@@ -15,7 +15,7 @@ func main() {
 	pool := db.Connect(cfg.DatabaseURL)
 	defer pool.Close()
 
-	projection := &booking.ReservationProjection{DB: pool}
+	projection := &booking.ReservationProjection{DB: queryDB}
 
 	log.Println("Starting projection worker...")
 
