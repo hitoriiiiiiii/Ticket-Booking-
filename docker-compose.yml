@@ -1,79 +1,143 @@
+version: "3.9"
+
 services:
-  postgres:
+
+  # COMMAND DATABASE (WRITE DB)
+ 
+  postgres_cmd:
     image: postgres:15
-    container_name: ticket-booking-db
+    container_name: ticket-cmd-db
     restart: always
+
     environment:
       POSTGRES_USER: "${DB_USER}"
       POSTGRES_PASSWORD: "${DB_PASSWORD}"
-      POSTGRES_DB: "${DB_NAME}"
+      POSTGRES_DB: "ticket_cmd_db"
+
     ports:
-      - '5433:5432'   # host:container
+      - "5433:5432"
+
     volumes:
-      - ./postgres-data:/var/lib/postgresql/data
-      - ./migrations:/migrations
+      - ./postgres-cmd-data:/var/lib/postgresql/data
+
     networks:
       - ticket-booking-network
+
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${DB_USER}"]
       interval: 5s
       timeout: 5s
       retries: 5
 
+  # QUERY DATABASE (READ DB)
+
+  postgres_query:
+    image: postgres:15
+    container_name: ticket-query-db
+    restart: always
+
+    environment:
+      POSTGRES_USER: "${DB_USER}"
+      POSTGRES_PASSWORD: "${DB_PASSWORD}"
+      POSTGRES_DB: "ticket_query_db"
+
+    ports:
+      - "5434:5432"
+
+    volumes:
+      - ./postgres-query-data:/var/lib/postgresql/data
+
+    networks:
+      - ticket-booking-network
+
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+
+  # REDIS (QUEUE + CACHE)
+
   redis:
     image: redis:7-alpine
     container_name: ticket-booking-redis
     restart: always
+
     ports:
-      - '6379:6379'
+      - "6379:6379"
+
     networks:
       - ticket-booking-network
+
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 5s
       timeout: 5s
       retries: 5
 
+  # API SERVICE
+
   api:
     build:
       context: .
       dockerfile: docker/DockerFile.api
+
     container_name: ticket-booking-api
     restart: always
+
     env_file:
       - .env
+
     environment:
-      DATABASE_URL: "postgres://${DB_USER}:${DB_PASSWORD}@${DB_HOST}:${DB_PORT}/${DB_NAME}?sslmode=${DB_SSLMODE}"
-      REDIS_URL: "redis://${REDIS_HOST}:${REDIS_PORT}"
-      PORT: "8080"
+      COMMAND_DATABASE_URL: "postgres://${DB_USER}:${DB_PASSWORD}@postgres_cmd:5432/ticket_cmd_db?sslmode=disable"
+      QUERY_DATABASE_URL: "postgres://${DB_USER}:${DB_PASSWORD}@postgres_query:5432/ticket_query_db?sslmode=disable"
+      REDIS_URL: "redis://redis:6379"
+      PORT: "8081"
+
     ports:
       - "8081:8081"
+
     depends_on:
-      postgres:
+      postgres_cmd:
+        condition: service_healthy
+      postgres_query:
         condition: service_healthy
       redis:
         condition: service_healthy
+
     networks:
       - ticket-booking-network
 
+  # WORKER SERVICE
+ 
   worker:
     build:
       context: .
       dockerfile: docker/DockerFile.worker
+
     container_name: ticket-booking-worker
     restart: always
+
     env_file:
       - .env
+
     environment:
-      DATABASE_URL: "postgres://${DB_USER}:${DB_PASSWORD}@${DB_HOST}:${DB_PORT}/${DB_NAME}?sslmode=${DB_SSLMODE}"
-      REDIS_URL: "redis://${REDIS_HOST}:${REDIS_PORT}"
+      COMMAND_DATABASE_URL: "postgres://${DB_USER}:${DB_PASSWORD}@postgres_cmd:5432/ticket_cmd_db?sslmode=disable"
+      QUERY_DATABASE_URL: "postgres://${DB_USER}:${DB_PASSWORD}@postgres_query:5432/ticket_query_db?sslmode=disable"
+      REDIS_URL: "redis://redis:6379"
+
     depends_on:
-      postgres:
+      postgres_cmd:
+        condition: service_healthy
+      postgres_query:
         condition: service_healthy
       redis:
         condition: service_healthy
+
     networks:
       - ticket-booking-network
+
 
 networks:
   ticket-booking-network:

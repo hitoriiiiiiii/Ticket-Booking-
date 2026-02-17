@@ -603,15 +603,29 @@ go run cmd/worker/main.go
 
 ## 📝 API Endpoints
 
+> 📚 **For complete API documentation with request/response examples, testing workflow, and error codes, please refer to our [Postman Documentation](./docs/POSTMAN.md)**
+
+### Quick Reference
+
 | Method | Endpoint | Description |
 |--------|----------|-------------|
-| POST | `/api/auth/register` | Register new user |
-| POST | `/api/auth/login` | User login |
-| GET | `/api/movies` | List all movies |
-| GET | `/api/shows/:movieId` | Get showtimes |
-| POST | `/api/booking/reserve` | Reserve seats |
-| POST | `/api/booking/confirm` | Confirm booking |
-| GET | `/api/booking/user/:id` | Get user bookings |
+| GET | `/health` | Health check |
+| POST | `/users/register` | Register new user |
+| POST | `/users/login` | User login |
+| GET | `/users` | List all users |
+| GET | `/movies` | List all movies |
+| GET | `/movies/:id` | Get movie by ID |
+| POST | `/movies` | Create new movie |
+| GET | `/shows` | List all shows |
+| POST | `/shows` | Create new show |
+| POST | `/reserve` | Reserve a ticket |
+| POST | `/confirm` | Confirm ticket booking |
+| POST | `/cancel` | Cancel ticket reservation |
+| GET | `/availability/:seat_id` | Check seat availability |
+| GET | `/events` | Get all events (admin) |
+| POST | `/payments/initiate` | Initiate payment |
+| POST | `/payments/verify` | Verify payment |
+| GET | `/notifications/:user_id` | Get user notifications |
 
 ---
 
