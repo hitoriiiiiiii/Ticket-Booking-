@@ -8,9 +8,10 @@ import (
 )
 
 type Config struct {
-	DatabaseURL string
-	RedisURL    string
-	Port        string
+	CommandDatabaseURL string
+	QueryDatabaseURL   string
+	RedisURL           string
+	Port               string
 }
 
 func Load() *Config {
@@ -20,9 +21,10 @@ func Load() *Config {
 	}
 
 	return &Config{
-		DatabaseURL: getEnv("DATABASE_URL", "postgres://ticket:ticket123@localhost:5433/ticket_db?sslmode=disable"),
-		RedisURL:    getEnv("REDIS_URL", "redis://localhost:6379"),
-		Port:        getEnv("PORT", "8080"),
+		CommandDatabaseURL: getEnv("COMMAND_DATABASE_URL", "postgres://ticket:ticket123@localhost:5433/ticket_cmd_db?sslmode=disable"),
+		QueryDatabaseURL:   getEnv("QUERY_DATABASE_URL", "postgres://ticket:ticket123@localhost:5434/ticket_query_db?sslmode=disable"),
+		RedisURL:           getEnv("REDIS_URL", "redis://localhost:6379"),
+		Port:               getEnv("PORT", "8080"),
 	}
 }
 

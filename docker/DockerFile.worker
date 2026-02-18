@@ -3,27 +3,26 @@ FROM golang:1.25-alpine AS builder
 
 WORKDIR /app
 
-# Copy go mod and sum files
-COPY go.mod go.sum ./
+RUN apk add --no-cache git
 
-# Download dependencies
+COPY go.mod go.sum ./
 RUN go mod download
 
-# Copy the source code
 COPY . .
 
-# Build the application
-RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o worker ./cmd/worker
+# Build worker binary (Query API / projection)
+RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o main ./cmd/worker
 
 # Final stage
 FROM alpine:latest
-
 RUN apk --no-cache add ca-certificates
 
 WORKDIR /root/
 
-# Copy the binary from builder stage
-COPY --from=builder /app/worker .
+COPY --from=builder /app/main .
 
-# Command to run
-CMD ["./worker"]
+# If worker exposes metrics or HTTP, uncomment
+# EXPOSE 8082
+
+# Run worker
+CMD ["./main"]

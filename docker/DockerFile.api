@@ -3,30 +3,30 @@ FROM golang:1.25-alpine AS builder
 
 WORKDIR /app
 
-# Copy go mod and sum files
-COPY go.mod go.sum ./
+# Install git for module downloads
+RUN apk add --no-cache git
 
-# Download dependencies
+# Copy Go modules and download dependencies
+COPY go.mod go.sum ./
 RUN go mod download
 
-# Copy the source code
+# Copy source code
 COPY . .
 
-# Build the application
+# Build command API binary
 RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o main ./cmd/api
 
 # Final stage
 FROM alpine:latest
-
 RUN apk --no-cache add ca-certificates
 
 WORKDIR /root/
 
-# Copy the binary from builder stage
+# Copy binary
 COPY --from=builder /app/main .
 
-# Expose port
-EXPOSE 8080
+# Expose port for HTTP
+EXPOSE 8081
 
-# Command to run
+# Run Command API
 CMD ["./main"]
