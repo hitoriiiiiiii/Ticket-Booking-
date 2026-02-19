@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"log"
 	"os"
 
@@ -34,67 +33,74 @@ func main() {
 	// Event Store for commands
 	eventStore := &events.Store{DB: cmdDB}
 
-	
-	// Booking
+	// Booking - Unified handler for event-sourced commands
 	bookingHandler := &booking.Handler{
-		CmdDB:   cmdDB,
-		QueryDB: queryDB,
 		EventStore: eventStore,
 	}
+	// Booking - Query handler for read operations
+	bookingQueryService := booking.NewQueryService(queryDB)
+	bookingQueryHandler := booking.NewQueryHandler(bookingQueryService)
 
-	// User
-	userHandler := &user.Handler{
-		CmdDB:   cmdDB,
-		QueryDB: queryDB,
-	}
+	// User - CQRS pattern
+	userCmdService := user.NewCommandService(cmdDB)
+	userQueryService := user.NewQueryService(queryDB)
+	userCommandHandler := user.NewCommandHandler(userCmdService)
+	userQueryHandler := user.NewQueryHandler(userQueryService)
 
-	// Movie
-	movieHandler := &movie.Handler{
-		CmdDB:   cmdDB,
-		QueryDB: queryDB,
-	}
 
-	// Show
-	showHandler := &show.Handler{
-		CmdDB:   cmdDB,
-		QueryDB: queryDB,
-	}
+	// Movie - CQRS pattern
+	movieCmdService := movie.NewCommandService(cmdDB)
+	movieQueryService := movie.NewQueryService(queryDB)
+	movieCommandHandler := movie.NewCommandHandler(movieCmdService)
+	movieQueryHandler := movie.NewQueryHandler(movieQueryService)
 
-	// Payments
+
+	// Show - CQRS pattern
+	showCmdService := show.NewCommandService(cmdDB)
+	showQueryService := show.NewQueryService(queryDB)
+	showCommandHandler := show.NewCommandHandler(showCmdService)
+	showQueryHandler := show.NewQueryHandler(showQueryService)
+
+	// Payments - CQRS pattern
 	paymentRepo := payments.NewRepository(cmdDB)
-	paymentService := payments.NewService(paymentRepo)
-	paymentHandler := payments.NewHandler(paymentService)
+	paymentCmdService := payments.NewCommandService(paymentRepo)
+	paymentCommandHandler := payments.NewCommandHandler(paymentCmdService)
+	// For payments, we can also create query handler if needed
+	paymentQueryService := payments.NewQueryService(queryDB)
+	paymentQueryHandler := payments.NewQueryHandler(paymentQueryService)
 
-	// Notifications
-	notificationRepo := notification.NewRepository(queryDB)
-	notificationHandler := notification.NewHandler(notificationRepo)
+	// Notifications - CQRS pattern
+	notificationQueryService := notification.NewQueryService(queryDB)
+	notificationQueryHandler := notification.NewQueryHandler(notificationQueryService)
 
+	
+	
 	// COMMAND APIs (writes)
 	r.POST("/cmd/reserve", bookingHandler.ReserveTicket)
 	r.POST("/cmd/cancel", bookingHandler.CancelTicket)
 	r.POST("/cmd/confirm", bookingHandler.ConfirmTicket)
-	r.POST("/cmd/users/register", userHandler.Register)
-	r.POST("/cmd/movies", movieHandler.CreateMovie)
-	r.POST("/cmd/shows", showHandler.CreateShow)
-	r.POST("/cmd/payments/initiate", paymentHandler.InitiatePayment)
-	r.POST("/cmd/payments/verify", paymentHandler.VerifyPayment)
+	r.POST("/cmd/users/register", userCommandHandler.Register)
+	r.POST("/cmd/movies", movieCommandHandler.CreateMovie)
+	r.POST("/cmd/shows", showCommandHandler.CreateShow)
+	r.POST("/cmd/payments/initiate", paymentCommandHandler.InitiatePayment)
+	r.POST("/cmd/payments/verify", paymentCommandHandler.VerifyPayment)
 
 	// QUERY APIs (reads)
-	r.GET("/query/reservations/:user_id", bookingHandler.GetUserReservations)
+	r.GET("/query/reservations/:user_id", bookingQueryHandler.GetUserReservations)
 	r.GET("/query/availability/:seat_id", bookingHandler.CheckAvailability)
 	r.GET("/query/events", bookingHandler.GetEvents)
-	r.GET("/query/users", userHandler.ListUsers)
-	r.GET("/query/movies", movieHandler.GetMovies)
-	r.GET("/query/movies/:id", movieHandler.GetMovie)
-	r.GET("/query/shows", showHandler.GetShows)
-	r.GET("/query/notifications/:user_id", notificationHandler.GetUserNotifications)
+	r.GET("/query/users", userQueryHandler.ListUsers)
+	r.GET("/query/movies", movieQueryHandler.GetMovies)
+	r.GET("/query/movies/:id", movieQueryHandler.GetMovie)
+	r.GET("/query/shows", showQueryHandler.GetShows)
+	r.GET("/query/notifications/:user_id", notificationQueryHandler.GetUserNotifications)
 
 	// Health
 	r.GET("/health", booking.HealthCheck)
 
-	//    Projection 
+	// Projection 
 	projection := &booking.ReservationProjection{
-		DB:      queryDB,
+		DB:         queryDB,
 		EventStore: eventStore,
 	}
 	go projection.Run() // listens for events and updates query DB

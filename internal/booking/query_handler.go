@@ -43,3 +43,20 @@ func (h *QueryHandler) GetEvents(c *gin.Context) {
 
 	c.JSON(200, eventList)
 }
+
+// GetUserReservations - Query handler for getting all reservations for a user
+func (h *QueryHandler) GetUserReservations(c *gin.Context) {
+	userID := c.Param("user_id")
+
+	reservations, err := h.QueryService.GetUserReservations(c.Request.Context(), userID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch reservations"})
+		return
+	}
+
+	if reservations == nil {
+		reservations = []gin.H{}
+	}
+
+	c.JSON(http.StatusOK, reservations)
+}

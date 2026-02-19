@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 
+	"github.com/hitorii/ticket-booking/internal/notification"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
