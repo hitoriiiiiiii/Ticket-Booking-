@@ -26,6 +26,15 @@ func (s *CommandService) ReserveTicket(ctx context.Context, userID, seatID strin
 	if err != nil {
 		return errors.New("seat already reserved")
 	}
+
+	// Push job into NotificationQueue after successful reservation
+	notification.NotificationQueue <- notification.Job{
+		Type:    notification.JobTypeBooking,
+		UserID:  userID,
+		Message: "Seat reserved successfully",
+		Data:    map[string]interface{}{"seatID": seatID},
+	}
+
 	return nil
 }
 
