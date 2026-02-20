@@ -33,10 +33,9 @@ func main() {
 	// Event Store for commands
 	eventStore := &events.Store{DB: cmdDB}
 
-	// Booking - Unified handler for event-sourced commands
-	bookingHandler := &booking.Handler{
-		EventStore: eventStore,
-	}
+	// Booking - Command Handler for write operations (CQRS pattern)
+	bookingCommandService := booking.NewCommandService(cmdDB)
+	bookingCommandHandler := booking.NewCommandHandler(bookingCommandService, eventStore)
 	// Booking - Query handler for read operations
 	bookingQueryService := booking.NewQueryService(queryDB)
 	bookingQueryHandler := booking.NewQueryHandler(bookingQueryService)

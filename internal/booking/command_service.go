@@ -4,7 +4,7 @@ import (
 	"context"
 	"errors"
 
-	"github.com/hitorii/ticket-booking/internal/notification"
+	"github.com/hitorii/ticket-booking/internal/notifications"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
@@ -29,8 +29,8 @@ func (s *CommandService) ReserveTicket(ctx context.Context, userID, seatID strin
 	}
 
 	// Push job into NotificationQueue after successful reservation
-	notification.NotificationQueue <- notification.Job{
-		Type:    notification.JobTypeBooking,
+	notifications.NotificationQueue <- notifications.Job{
+		Type:    notifications.JobTypeBooking,
 		UserID:  userID,
 		Message: "Seat reserved successfully",
 		Data:    map[string]interface{}{"seatID": seatID},
