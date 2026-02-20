@@ -1,6 +1,6 @@
 // Query service for notification read operations (CQRS)
 
-package notifications
+package notification
 
 import (
 	"context"
@@ -88,8 +88,8 @@ func (s *QueryService) GetUnreadNotifications(ctx context.Context, userID string
 	return list, nil
 }
 
-// GetNotificationByID - Query to get a notification (s *Query by ID
-funcService) GetNotificationByID(ctx context.Context, id string) (*Notification, error) {
+// GetNotificationByID - Query to get a notification by ID
+func (s *QueryService) GetNotificationByID(ctx context.Context, id string) (*Notification, error) {
 	var n Notification
 	err := s.DB.QueryRow(ctx, `
 		SELECT id, user_id, message, type, is_read, created_at

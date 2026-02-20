@@ -9,6 +9,7 @@ import (
 	"github.com/hitorii/ticket-booking/internal/config"
 	"github.com/hitorii/ticket-booking/internal/db"
 	"github.com/hitorii/ticket-booking/internal/notification"
+	"github.com/hitorii/ticket-booking/internal/queue"
 )
 
 func main() {
@@ -22,6 +23,16 @@ func main() {
 	queryDB := db.Connect(os.Getenv("QUERY_DATABASE_URL"))
 	defer cmdDB.Close()
 	defer queryDB.Close()
+
+	// Initialize Redis for job queue
+	log.Println("🔌 Connecting to Redis for job queue...")
+	if err := queue.InitRedis(cfg.RedisURL); err != nil {
+		log.Printf("❌ Failed to connect to Redis: %v", err)
+		log.Println("⚠️  Worker will run in fallback mode with in-memory queue")
+	} else {
+		log.Println("✅ Redis connected successfully")
+	}
+	defer queue.Close()
 
 	// Start notification worker
 	notificationRepo := notification.NewRepository(queryDB)

@@ -1,6 +1,6 @@
-//Notifications model
+// Notifications model
 
-package notifications
+package notification
 
 import "time"
 

@@ -81,3 +81,36 @@ func (s *QueryService) GetEvents(ctx context.Context) ([]Event, error) {
 
 	return eventsList, nil
 }
+
+// Reservation represents a user's reservation
+type Reservation struct {
+	ID     string `json:"id"`
+	UserID string `json:"user_id"`
+	SeatID string `json:"seat_id"`
+	Status string `json:"status"`
+}
+
+// GetUserReservations - Query to get all reservations for a user
+func (s *QueryService) GetUserReservations(ctx context.Context, userID string) ([]Reservation, error) {
+	rows, err := s.DB.Query(
+		ctx,
+		"SELECT id, user_id, seat_id, status FROM reservations WHERE user_id=$1",
+		userID,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var reservations []Reservation
+	for rows.Next() {
+		var r Reservation
+		err := rows.Scan(&r.ID, &r.UserID, &r.SeatID, &r.Status)
+		if err != nil {
+			return nil, err
+		}
+		reservations = append(reservations, r)
+	}
+
+	return reservations, nil
+}

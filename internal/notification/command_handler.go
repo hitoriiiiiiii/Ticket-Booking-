@@ -1,6 +1,6 @@
 // Command handler for notification write operations (CQRS)
 
-package notifications
+package notification
 
 import (
 	"net/http"

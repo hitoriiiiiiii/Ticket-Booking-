@@ -8,10 +8,12 @@ import (
 	"github.com/joho/godotenv"
 
 	"github.com/hitorii/ticket-booking/internal/booking"
+	"github.com/hitorii/ticket-booking/internal/config"
 	"github.com/hitorii/ticket-booking/internal/db"
 	"github.com/hitorii/ticket-booking/internal/events"
 	"github.com/hitorii/ticket-booking/internal/movie"
 	"github.com/hitorii/ticket-booking/internal/payments"
+	"github.com/hitorii/ticket-booking/internal/queue"
 	"github.com/hitorii/ticket-booking/internal/show"
 	"github.com/hitorii/ticket-booking/internal/user"
 	"github.com/hitorii/ticket-booking/internal/notification"
@@ -26,9 +28,22 @@ func main() {
 
 	r := gin.Default()
 
+	// Load config
+	cfg := config.Load()
+
 	// Connect to Command DB and Query DB
 	cmdDB := db.Connect(os.Getenv("COMMAND_DATABASE_URL"))
 	queryDB := db.Connect(os.Getenv("QUERY_DATABASE_URL"))
+
+	// Initialize Redis for job queue
+	log.Println("🔌 Connecting to Redis for job queue...")
+	if err := queue.InitRedis(cfg.RedisURL); err != nil {
+		log.Printf("❌ Failed to connect to Redis: %v", err)
+		log.Println("⚠️  Job queue will not work - please ensure Redis is running")
+	} else {
+		log.Println("✅ Redis connected successfully")
+	}
+	defer queue.Close()
 
 	// Event Store for commands
 	eventStore := &events.Store{DB: cmdDB}
@@ -75,9 +90,9 @@ func main() {
 	
 	
 	// COMMAND APIs (writes)
-	r.POST("/cmd/reserve", bookingHandler.ReserveTicket)
-	r.POST("/cmd/cancel", bookingHandler.CancelTicket)
-	r.POST("/cmd/confirm", bookingHandler.ConfirmTicket)
+	r.POST("/cmd/reserve", bookingCommandHandler.ReserveTicket)
+	r.POST("/cmd/cancel", bookingCommandHandler.CancelTicket)
+	r.POST("/cmd/confirm", bookingCommandHandler.ConfirmTicket)
 	r.POST("/cmd/users/register", userCommandHandler.Register)
 	r.POST("/cmd/movies", movieCommandHandler.CreateMovie)
 	r.POST("/cmd/shows", showCommandHandler.CreateShow)
@@ -86,8 +101,8 @@ func main() {
 
 	// QUERY APIs (reads)
 	r.GET("/query/reservations/:user_id", bookingQueryHandler.GetUserReservations)
-	r.GET("/query/availability/:seat_id", bookingHandler.CheckAvailability)
-	r.GET("/query/events", bookingHandler.GetEvents)
+	r.GET("/query/availability/:seat_id", bookingQueryHandler.CheckAvailability)
+	r.GET("/query/events", bookingQueryHandler.GetEvents)
 	r.GET("/query/users", userQueryHandler.ListUsers)
 	r.GET("/query/movies", movieQueryHandler.GetMovies)
 	r.GET("/query/movies/:id", movieQueryHandler.GetMovie)

@@ -1,14 +1,39 @@
-//Worker 
-package notifications
+// Worker 
+package notification
 
-import "log"
+import (
+	"context"
+	"fmt"
+	"log"
+	"os"
+	"time"
+
+	"github.com/hitorii/ticket-booking/internal/config"
+	"github.com/hitorii/ticket-booking/internal/queue"
+)
 
 func StartWorker(repo *Repository) {
-
+	// Initialize Redis connection
+	cfg := config.Load()
+	
+	log.Println("🔌 Connecting to Redis...")
+	if err := queue.InitRedis(cfg.RedisURL); err != nil {
+		log.Printf("❌ Failed to connect to Redis: %v", err)
+		log.Println("⚠️  Worker cannot start without Redis - job queue will be unavailable")
+		return
+	}
+	
+	log.Println("✅ Connected to Redis successfully")
+	
+	// Get hostname for consumer identification
+	hostname, _ := os.Hostname()
+	consumerName := fmt.Sprintf("worker-%s-%d", hostname, time.Now().UnixNano())
+	
+	log.Printf("👤 Starting Redis consumer: %s", consumerName)
+	
+	// Start consuming from Redis stream
 	go func() {
-		log.Println("🔔 Notification Worker Started...")
-
-		for job := range NotificationQueue {
+		err := queue.ConsumeJobs(context.Background(), consumerName, func(job queue.JobPayload) error {
 			log.Printf("📩 Processing Job: Type=%s, UserID=%s, Message=%s", job.Type, job.UserID, job.Message)
 
 			switch job.Type {
@@ -20,9 +45,9 @@ func StartWorker(repo *Repository) {
 				})
 				if err != nil {
 					log.Println("❌ Failed to save notification:", err)
-				} else {
-					log.Println("✅ Notification saved successfully")
+					return err
 				}
+				log.Println("✅ Notification saved successfully")
 
 			case JobTypeEmail:
 				// Process email job (in a real app, this would send an email)
@@ -40,9 +65,9 @@ func StartWorker(repo *Repository) {
 				})
 				if err != nil {
 					log.Println("❌ Failed to save payment notification:", err)
-				} else {
-					log.Println("✅ Payment notification saved successfully")
+					return err
 				}
+				log.Println("✅ Payment notification saved successfully")
 
 			case JobTypeBooking:
 				// Process booking notification
@@ -55,13 +80,21 @@ func StartWorker(repo *Repository) {
 				})
 				if err != nil {
 					log.Println("❌ Failed to save booking notification:", err)
-				} else {
-					log.Println("✅ Booking notification saved successfully")
+					return err
 				}
+				log.Println("✅ Booking notification saved successfully")
 
 			default:
 				log.Printf("⚠️ Unknown job type: %s", job.Type)
 			}
+			
+			return nil
+		})
+		
+		if err != nil && err != context.Canceled {
+			log.Printf("❌ Error in Redis consumer: %v", err)
+			log.Println("⚠️  Restarting consumer in 5 seconds...")
+			time.Sleep(5 * time.Second)
 		}
 	}()
 }

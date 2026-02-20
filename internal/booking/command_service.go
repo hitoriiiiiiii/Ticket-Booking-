@@ -4,7 +4,7 @@ import (
 	"context"
 	"errors"
 
-	"github.com/hitorii/ticket-booking/internal/notifications"
+	"github.com/hitorii/ticket-booking/internal/notification"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
@@ -28,12 +28,12 @@ func (s *CommandService) ReserveTicket(ctx context.Context, userID, seatID strin
 		return errors.New("seat already reserved")
 	}
 
-	// Push job into NotificationQueue after successful reservation
-	notifications.NotificationQueue <- notifications.Job{
-		Type:    notifications.JobTypeBooking,
-		UserID:  userID,
-		Message: "Seat reserved successfully",
-		Data:    map[string]interface{}{"seatID": seatID},
+	// Push job into Redis Queue after successful reservation
+	err = notification.EnqueueBookingNotification(userID, seatID, "Seat reserved successfully")
+	if err != nil {
+		// Log error but don't fail the reservation
+		// In production, you might want to implement retry logic
+		println("Warning: Failed to enqueue notification:", err.Error())
 	}
 
 	return nil
@@ -56,6 +56,13 @@ func (s *CommandService) ConfirmTicket(ctx context.Context, userID, seatID strin
 	if res.RowsAffected() == 0 {
 		return errors.New("seat not held or already booked")
 	}
+	
+	// Push job into Redis Queue after successful confirmation
+	err = notification.EnqueueBookingNotification(userID, seatID, "Ticket confirmed successfully")
+	if err != nil {
+		println("Warning: Failed to enqueue notification:", err.Error())
+	}
+	
 	return nil
 }
 
@@ -74,5 +81,12 @@ func (s *CommandService) CancelTicket(ctx context.Context, userID, seatID string
 	if res.RowsAffected() == 0 {
 		return errors.New("no reservation found")
 	}
+	
+	// Push job into Redis Queue after cancellation
+	err = notification.EnqueueBookingNotification(userID, seatID, "Reservation cancelled")
+	if err != nil {
+		println("Warning: Failed to enqueue notification:", err.Error())
+	}
+	
 	return nil
 }

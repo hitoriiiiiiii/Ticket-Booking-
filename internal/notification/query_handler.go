@@ -1,6 +1,6 @@
 // Query handler for notification read operations (CQRS)
 
-package notifications
+package notification
 
 import (
 	"net/http"
