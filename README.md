@@ -3,7 +3,24 @@
 A high-performance backend for ticket booking applications, inspired by platforms like BookMyShow. Designed to handle 50K+ concurrent users with robust concurrency control and scalability.
 
 ---
-## Features
+
+## 📋 Table of Contents
+
+- [Features](#-features)
+- [Architecture](#-architecture)
+- [Technology Stack](#-technology-stack)
+- [Getting Started](#-getting-started)
+- [Docker Compose](#-docker-compose)
+- [API Endpoints](#-api-endpoints)
+- [Project Structure](#-project-structure)
+- [Database Schema](#-database-schema)
+- [Testing](#-testing)
+- [Scaling](#-scaling)
+- [License](#-license)
+
+---
+
+## ✨ Features
 
 - Users browse movies
 - Select theater + showtime
@@ -13,6 +30,8 @@ A high-performance backend for ticket booking applications, inspired by platform
 - Booking confirmation
 - Prevent double booking
 - Handle 50K+ concurrent users
+
+---
 
 ## Services
 
@@ -26,6 +45,7 @@ A high-performance backend for ticket booking applications, inspired by platform
 | Notification Service | SMS/email         |
 
 ---
+
 ## 🚀 System Design Technologies
 
 ### 🏗 Backend Architecture
@@ -35,22 +55,6 @@ A high-performance backend for ticket booking applications, inspired by platform
 | **Golang (Go)** | High-performance backend service with native concurrency support |
 | **RESTful API** | API layer for booking operations using Gin web framework |
 | **Layered Architecture** | Clean separation between Controllers, Services, and Repository layers |
-
-```
-cmd/
-├── api/main.go          # API server entry point
-└── worker/main.go       # Background job worker
-
-internal/
-├── booking/            # Booking service (command side)
-│   ├── handler.go      # HTTP handlers
-│   ├── projection.go   # Read models (query side)
-│   └── service.go     # Business logic
-├── movie/             # Movie service
-├── show/               # Showtime service
-├── user/               # User & authentication
-└── middleware/         # Auth, logging, rate limiting
-```
 
 ---
 
@@ -74,7 +78,7 @@ internal/
 │           ▼               │   │ • payload      │       │          ▼                               │
 │   ┌─────────────┐         │   │ • created_at   │       │   ┌─────────────┐                        │
 │   │  Payment    │────────────►│                 │       │   │   Seat      │                        │
-│   │  Processing │         │   └────────┬────────┘       │   │ Availability│                        │
+│   │  Processing │         │   └────────┬────────┘       │   │Availability │                        │
 │   └─────────────┘         │            │                 │   └──────┬──────┘                        │
 │           │               │            │                 │          │                               │
 │           ▼               │            ▼                 │          ▼                               │
@@ -115,9 +119,11 @@ internal/
 4. **Read Model**: The `reservations` table is updated with the latest booking status
 5. **Queries (Read Side)**: Read operations like fetching shows, checking seat availability, and retrieving user bookings query the optimized read model
 
-- **Command Side**: Handles seat booking, payment, reservation updates → writes to Event Store
-- **Query Side**: Optimized for fetching shows, seat availability, user bookings → reads from Read Model
+- **Command Side** (`/cmd/*`): Handles seat booking, payment, reservation updates → writes to Event Store
+- **Query Side** (`/query/*`): Optimized for fetching shows, seat availability, user bookings → reads from Read Model
 - **Benefits**: Improves performance under heavy concurrent traffic, separates read/write concerns
+
+---
 
 ### CQRS Data Flow Diagram
 
@@ -196,25 +202,10 @@ internal/
 
 | Feature | Implementation |
 |---------|----------------|
-| **PostgreSQL 15** | Relational DB for shows, seats, bookings |
+| **PostgreSQL 15** | Relational DB for shows, seats, bookings (Command & Query databases) |
 | **ACID Transactions** | Ensures safe booking without double reservation |
 | **Database Indexing** | Faster show/search queries |
-| **GORM + pgx** | ORM and native PostgreSQL driver |
-
-```
-sql
--- Sample: Events table for event sourcing
-CREATE TABLE events (
-    id BIGSERIAL PRIMARY KEY,
-    aggregate_id UUID NOT NULL,
-    event_type VARCHAR(100) NOT NULL,
-    payload JSONB NOT NULL,
-    created_at TIMESTAMP DEFAULT NOW()
-);
-
-CREATE INDEX idx_events_aggregate ON events(aggregate_id);
-CREATE INDEX idx_events_type ON events(event_type);
-```
+| **GORM** | ORM for database operations |
 
 ---
 
@@ -243,16 +234,15 @@ CREATE INDEX idx_events_type ON events(event_type);
 └─────────────────────────────────────────────────────────────┘
 ```
 
-- **Seat Locking**: Prevents double booking with configurable timeout
+- **Seat Locking**: Prevents double booking with configurable timeout (10 minutes)
 - **Optimistic Locking**: Version-based conflict detection
 - **Pessimistic Locking**: Database-level row locking
 - **Go Concurrency**: Goroutines & Mutex Locks for thread-safe operations
+- **Distributed Locking**: Redis-based distributed locks for 50K+ concurrent users
 
 ---
 
 ### ⚡ Caching Layer
-
-> **Redis** for real-time seat availability and temporary locks
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
@@ -276,10 +266,13 @@ CREATE INDEX idx_events_type ON events(event_type);
 └─────────────────────────────────────────────────────────────┘
 ```
 
+> **Redis** for real-time seat availability and temporary locks
+
 - **Real-time seat availability**
-- **Temporary seat locks**
+- **Temporary seat locks** (TTL: 10 minutes)
 - **Session management**
-- **Rate limiting**
+- **Rate limiting** (5000 requests/minute)
+- **Job Queue**: Redis-based job queue for background processing
 - Reduces database load significantly
 
 ---
@@ -320,9 +313,7 @@ CREATE INDEX idx_events_type ON events(event_type);
 - ✅ Payment verification
 - ✅ Reservation expiry cleanup
 - ✅ Analytics logging
-
-**Future Scope:**
-- RabbitMQ / Kafka / Redis Streams
+- ✅ Event dispatching via Kafka
 
 ---
 
@@ -356,21 +347,16 @@ CREATE INDEX idx_events_type ON events(event_type);
 ```
 
 **Events:**
-- `ReservationCreated` - Initial seat reservation
+- `TicketReserved` - Initial seat reservation
 - `SeatLocked` - Seat temporarily locked
-- `BookingConfirmed` - Payment successful
-- `SeatReleased` - Lock expired or cancelled
+- `TicketConfirmed` - Payment successful
+- `TicketCancelled` - Lock expired or cancelled
+- `PaymentVerified` - Payment verification completed
+- `UserRegistered` - New user registration
 
 ---
 
 ### 🔐 Authentication & Security
-
-| Feature | Implementation |
-|---------|----------------|
-| **JWT Authentication** | Secure session handling with token-based auth |
-| **Role-Based Access Control (RBAC)** | Admin & User roles |
-| **Rate Limiting** | Prevent API abuse |
-| **Structured Logging** | Debugging & tracing |
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
@@ -402,6 +388,13 @@ CREATE INDEX idx_events_type ON events(event_type);
 │                                                              │
 └─────────────────────────────────────────────────────────────┘
 ```
+
+| Feature | Implementation |
+|---------|----------------|
+| **JWT Authentication** | Secure session handling with token-based auth |
+| **Role-Based Access Control (RBAC)** | Admin & User roles |
+| **Rate Limiting** | Prevent API abuse (5000 req/min) |
+| **Structured Logging** | Debugging & tracing |
 
 ---
 
@@ -440,31 +433,12 @@ CREATE INDEX idx_events_type ON events(event_type);
 
 ### 🐳 DevOps & Deployment
 
-```
-yaml
-# docker-compose.yml
-services:
-  postgres:
-    image: postgres:15
-    ports: [5433:5432]
-    
-  redis:
-    image: redis:7-alpine
-    ports: [6379:6379]
-    
-  api:
-    build: ./docker/DockerFile.api
-    ports: [8081:8081]
-    
-  worker:
-    build: ./docker/DockerFile.worker
-```
-
 | Tool | Purpose |
 |------|---------|
 | **Docker** | Containerized backend |
-| **Docker Compose** | Multi-service setup (DB + Redis + API) |
-| **GitHub Actions** | CI/CD Pipeline Ready |
+| **Docker Compose** | Multi-service setup (DB + Redis + API + Kafka) |
+| **Kubernetes** | Production deployment with HPA |
+| **Nginx** | Load balancer |
 
 ---
 
@@ -487,103 +461,32 @@ services:
 | **Integration Testing** | Booking workflow tests |
 | **API Testing** | Postman collection ready |
 
+---
+
+## 🛠 Technology Stack
+
+| Category          | Technology                    |
+| ----------------- | ----------------------------- |
+| Language          | Go 1.21+                     |
+| Framework         | Gin                           |
+| Database          | PostgreSQL 15                 |
+| Cache             | Redis 7                       |
+| ORM               | GORM                          |
+| Authentication    | JWT                           |
+| Message Queue     | Kafka                         |
+| Container         | Docker                        |
+| Orchestration     | Kubernetes                    |
 
 ---
 
-## 📁 Repository Structure
-
-```
-.
-├── .gitignore
-├── .prettierignore
-├── .prettierrc
-├── docker-compose.yml
-├── go.mod
-├── go.sum
-├── package-lock.json
-├── package.json
-├── READMe.Md
-├── cmd/
-│   ├── api/
-│   │   └── main.go
-│   └── worker/
-│       └── main.go
-├── docker/
-│   ├── DockerFile.api
-│   └── DockerFile.worker
-├── internal/
-│   ├── booking/
-│   │   ├── handler.go
-│   │   ├── projection.go
-│   │   └── service.go
-│   ├── config/
-│   │   └── config.go
-│   ├── db/
-│   │   └── postgres.go
-│   ├── events/
-│   │   ├── model.go
-│   │   └── store.go
-│   ├── middleware/
-│   │   ├── auth.go
-│   │   ├── logger.go
-│   │   └── rateLimiter.go
-│   ├── movie/
-│   │   ├── handler.go
-│   │   ├── model.go
-│   │   └── service.go
-│   ├── queue/
-│   │   ├── jobs.go
-│   │   ├── redis.go
-│   │   └── stream.go
-│   ├── show/
-│   │   ├── handler.go
-│   │   ├── model.go
-│   │   └── service.go
-│   ├── user/
-│   │   ├── handler.go
-│   │   └── model.go
-│   └── utils/
-│       └── response.go
-├── migrations/
-│   ├── 001_events.sql
-│   └── 002_users.sql
-└── postgres-data/
-```
-
----
-
-## 🛠 Quick Start
+## 🚀 Getting Started
 
 ### Prerequisites
-- Go 1.25+
-- Docker & Docker Compose
-- PostgreSQL 15
-- Redis 7
 
-### Run with Docker Compose
-
-## Database Access
-
-To access the database using psql:
-
-```bash
-docker exec -it ticket-booking-db psql -U ticket -d ticket_db
-```
-```
-bash
-# Clone the repository
-git clone https://github.com/hitorii/ticket-booking.git
-cd ticket-booking
-
-# Start all services
-docker-compose up -d
-
-# Access API
-http://localhost:8080
-
-# Access database
-docker exec -it ticket-booking-db psql -U ticket -d ticket_db
-```
+- **Go** 1.21 or higher
+- **Docker** & Docker Compose
+- **PostgreSQL** 15
+- **Redis** 7
 
 ### Run Locally
 
@@ -595,51 +498,333 @@ go mod download
 # Run API server
 go run cmd/api/main.go
 
-# Run background worker
+# Run background worker (in separate terminal)
 go run cmd/worker/main.go
+```
+
+### Environment Variables
+
+Create a `.env` file in the root directory:
+
+```
+env
+# Database
+DB_USER=ticket
+DB_PASSWORD=ticket123
+
+# Server
+PORT=8080
+
+# Kafka
+KAFKA_BROKER=localhost:9092
 ```
 
 ---
 
-## 📝 API Endpoints
+## 🐳 Docker Compose
 
-> 📚 **For complete API documentation with request/response examples, testing workflow, and error codes, please refer to our [Postman Documentation](./docs/POSTMAN.md)**
+### Services Overview
 
-### Quick Reference
+The Docker Compose setup includes the following services:
+
+| Service | Container Name | Port | Description |
+|---------|---------------|------|-------------|
+| `postgres_cmd` | ticket-cmd-db | 5433 | Command Database (Write) |
+| `postgres_query` | ticket-query-db | 5434 | Query Database (Read) |
+| `redis` | ticket-booking-redis | 6379 | Cache & Queue |
+| `zookeeper` | ticket-zookeeper | 2181 | Kafka Manager |
+| `kafka` | ticket-kafka | 9092 | Message Broker |
+| `api` | ticket-booking-api | 8081 | API Server |
+| `worker` | ticket-booking-worker | - | Background Worker |
+
+### Quick Start with Docker Compose
+
+```
+bash
+# Clone the repository
+git clone https://github.com/hitorii/ticket-booking.git
+cd ticket-booking
+
+# Create .env file
+echo "DB_USER=ticket" > .env
+echo "DB_PASSWORD=ticket123" >> .env
+
+# Start all services
+docker-compose up -d
+
+# Access API
+http://localhost:8081
+
+# View logs
+docker-compose logs -f
+
+# Stop all services
+docker-compose down
+```
+
+### Database Access
+
+```
+bash
+# Connect to Command Database
+docker exec -it ticket-cmd-db psql -U ticket -d ticket_cmd_db
+
+# Connect to Query Database
+docker exec -it ticket-query-db psql -U ticket -d ticket_query_db
+```
+
+---
+
+## 📡 API Endpoints
+
+> **For complete API documentation with request/response examples, refer to [Postman Documentation](./docs/POSTMAN.md)**
+
+### Base URL
+```
+http://localhost:8081
+```
+
+### Command Endpoints (Write Operations)
+
+| Method | Endpoint | Description | Request Body |
+|--------|----------|-------------|--------------|
+| POST | `/cmd/reserve` | Reserve a ticket | `{"user_id": "1", "seat_id": "A1"}` |
+| POST | `/cmd/confirm` | Confirm ticket booking | `{"user_id": "1", "seat_id": "A1"}` |
+| POST | `/cmd/cancel` | Cancel ticket reservation | `{"user_id": "1", "seat_id": "A1"}` |
+| POST | `/cmd/users/register` | Register new user | `{"username": "john", "email": "john@example.com", "password": "pass123", "is_admin": false}` |
+| POST | `/cmd/movies` | Create new movie | `{"name": "Inception", "genre": "Sci-Fi", "duration": 148}` |
+| POST | `/cmd/shows` | Create new show | `{"movie_id": 1, "theater": "Theater A", "start_time": "2024-01-20T14:00:00Z"}` |
+| POST | `/cmd/payments/initiate` | Initiate payment | `{"booking_id": "1", "user_id": "1", "amount": 500}` |
+| POST | `/cmd/payments/verify` | Verify payment | `{"payment_id": "pay_xxx", "mode": "success"}` |
+
+### Query Endpoints (Read Operations)
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/query/movies` | List all movies |
+| GET | `/query/movies/:id` | Get movie by ID |
+| GET | `/query/shows` | List all shows |
+| GET | `/query/availability/:seat_id` | Check seat availability |
+| GET | `/query/reservations/:user_id` | Get user reservations |
+| GET | `/query/users` | List all users |
+| GET | `/query/events` | Get all events |
+| GET | `/query/notifications/:user_id` | Get user notifications |
+
+### System Endpoints
 
 | Method | Endpoint | Description |
 |--------|----------|-------------|
 | GET | `/health` | Health check |
-| POST | `/users/register` | Register new user |
-| POST | `/users/login` | User login |
-| GET | `/users` | List all users |
-| GET | `/movies` | List all movies |
-| GET | `/movies/:id` | Get movie by ID |
-| POST | `/movies` | Create new movie |
-| GET | `/shows` | List all shows |
-| POST | `/shows` | Create new show |
-| POST | `/reserve` | Reserve a ticket |
-| POST | `/confirm` | Confirm ticket booking |
-| POST | `/cancel` | Cancel ticket reservation |
-| GET | `/availability/:seat_id` | Check seat availability |
-| GET | `/events` | Get all events (admin) |
-| POST | `/payments/initiate` | Initiate payment |
-| POST | `/payments/verify` | Verify payment |
-| GET | `/notifications/:user_id` | Get user notifications |
 
 ---
 
-## 🔧 Technology Stack
+## 📁 Project Structure
 
-| Category | Technology |
-|----------|------------|
-| **Language** | Go 1.25 |
-| **Framework** | Gin |
-| **Database** | PostgreSQL 15 |
-| **Cache** | Redis 7 |
-| **ORM** | GORM |
-| **Auth** | JWT |
-| **Container** | Docker |
+```
+.
+├── .gitignore
+├── .prettierignore
+├── .prettierrc
+├── docker-compose.yml
+├── docker-compose.scaling.yml
+├── go.mod
+├── go.sum
+├── package-lock.json
+├── package.json
+├── README.md
+├── cmd/
+│   ├── api/
+│   │   └── main.go              # API server entry point
+│   └── worker/
+│       └── main.go              # Background worker entry point
+├── docker/
+│   ├── Dockerfile.api           # API container image
+│   ├── Dockerfile.worker       # Worker container image
+│   └── nginx.conf               # Nginx load balancer config
+├── internal/
+│   ├── booking/
+│   │   ├── command_handler.go   # Booking command handlers
+│   │   ├── command_service.go  # Booking business logic
+│   │   ├── projection.go        # Event projection
+│   │   ├── query_handler.go     # Booking query handlers
+│   │   └── query_service.go    # Booking query service
+│   ├── config/
+│   │   └── config.go            # Configuration
+│   ├── db/
+│   │   ├── command.go           # Command database connection
+│   │   └── query.go            # Query database connection
+│   ├── events/
+│   │   ├── dispatcher.go       # Event dispatcher
+│   │   ├── store.go            # Event store
+│   │   └── types.go            # Event types
+│   ├── middleware/
+│   │   ├── auth.go             # Authentication middleware
+│   │   ├── logger.go           # Logging middleware
+│   │   └── rateLimiter.go      # Rate limiting middleware
+│   ├── movie/
+│   │   ├── command_handler.go  # Movie command handlers
+│   │   ├── command_service.go  # Movie business logic
+│   │   ├── model.go            # Movie model
+│   │   ├── query_handler.go    # Movie query handlers
+│   │   └── query_service.go    # Movie query service
+│   ├── notification/
+│   │   ├── command_handler.go
+│   │   ├── command_service.go
+│   │   ├── model.go
+│   │   ├── query_handler.go
+│   │   ├── query_service.go
+│   │   ├── queue.go
+│   │   ├── repository.go
+│   │   └── worker.go
+│   ├── payments/
+│   │   ├── command_handler.go  # Payment command handlers
+│   │   ├── command_service.go  # Payment business logic
+│   │   ├── model.go            # Payment model
+│   │   ├── query_handler.go    # Payment query handlers
+│   │   ├── query_service.go    # Payment query service
+│   │   └── repository.go       # Payment repository
+│   ├── queue/
+│   │   ├── jobs.go             # Job definitions
+│   │   ├── redis.go            # Redis queue
+│   │   └── stream.go           # Stream processing
+│   ├── show/
+│   │   ├── command_handler.go  # Show command handlers
+│   │   ├── command_service.go  # Show business logic
+│   │   ├── model.go            # Show model
+│   │   ├── query_handler.go    # Show query handlers
+│   │   └── query_service.go    # Show query service
+│   ├── user/
+│   │   ├── command_handler.go  # User command handlers
+│   │   ├── command_service.go  # User business logic
+│   │   ├── model.go            # User model
+│   │   ├── query_handler.go    # User query handlers
+│   │   └── query_service.go    # User query service
+│   └── utils/
+│       ├── cache.go            # Cache utilities
+│       ├── lock.go             # Distributed lock
+│       └── response.go         # Response helpers
+├── migrations/
+│   ├── Command-DB/
+│   │   ├── 001_event.sql
+│   │   ├── 002_reservation.sql
+│   │   ├── 003_user.sql
+│   │   ├── 004_movies.sql
+│   │   ├── 005_shows.sql
+│   │   ├── 006_payments.sql
+│   │   └── 007_notifications.sql
+│   └── Query-DB/
+│       ├── 001_project.sql
+│       ├── 002_reservation.sql
+│       ├── 003_shows&movies.sql
+│       ├── 004_payment.sql
+│       ├── 005_notification.sql
+│       └── 006_user.sql
+├── k8s/
+│   ├── api-deployment.yaml
+│   ├── hpa.yaml
+│   ├── ingress.yaml
+│   └── namespace.yaml
+├── docs/
+│   ├── POSTMAN.md
+│   ├── SCALING.md
+│   ├── postman-collection.json
+│   └── README.md
+└── postgres-data/
+```
+
+---
+
+## 🗄 Database Schema
+
+### Command Database (Write)
+
+```
+sql
+-- Events table for event sourcing
+CREATE TABLE events (
+    id BIGSERIAL PRIMARY KEY,
+    aggregate_id UUID NOT NULL,
+    event_type VARCHAR(100) NOT NULL,
+    payload JSONB NOT NULL,
+    created_at TIMESTAMP DEFAULT NOW()
+);
+
+CREATE INDEX idx_events_aggregate ON events(aggregate_id);
+CREATE INDEX idx_events_type ON events(event_type);
+```
+
+### Query Database (Read)
+
+Optimized for fast queries:
+- `reservations` - User bookings
+- `shows` & `movies` - Showtime data
+- `payments` - Payment records
+- `notifications` - User alerts
+
+---
+
+## 🧪 Testing
+
+### Using Postman
+
+1. Import `docs/postman-collection.json` into Postman
+2. Set the base URL to `http://localhost:8081`
+3. Follow the testing workflow in [Postman Documentation](./docs/POSTMAN.md)
+
+### Example Workflow
+
+```
+bash
+# 1. Register a new user
+POST /cmd/users/register
+{"username": "john", "email": "john@example.com", "password": "pass123", "is_admin": false}
+
+# 2. List movies
+GET /query/movies
+
+# 3. Create a show (admin)
+POST /cmd/shows
+{"movie_id": 1, "theater": "Theater A", "start_time": "2024-01-20T14:00:00Z"}
+
+# 4. Check seat availability
+GET /query/availability/A1
+
+# 5. Reserve a ticket
+POST /cmd/reserve
+{"user_id": "1", "seat_id": "A1"}
+
+# 6. Confirm the booking
+POST /cmd/confirm
+{"user_id": "1", "seat_id": "A1"}
+
+# 7. Initiate payment
+POST /cmd/payments/initiate
+{"booking_id": "1", "user_id": "1", "amount": 500}
+
+# 8. Verify payment
+POST /cmd/payments/verify
+{"payment_id": "pay_xxx", "mode": "success"}
+
+# 9. Check user reservations
+GET /query/reservations/1
+
+# 10. Check notifications
+GET /query/notifications/1
+```
+
+---
+
+## 📈 Scaling
+
+The system supports horizontal scaling with:
+
+- **Load Balancing**: Nginx
+- **Auto-scaling**: Kubernetes HPA
+- **Session Management**: Redis
+- **Rate Limiting**: Per-IP token bucket (5000 req/min)
+- **Distributed Locking**: Redis-based locks for concurrency control
+
+For detailed scaling documentation, see [SCALING.md](./docs/SCALING.md).
 
 ---
 
