@@ -1,5 +1,3 @@
-version: "3.9"
-
 services:
 
   # COMMAND DATABASE (WRITE DB)

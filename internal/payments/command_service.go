@@ -9,15 +9,21 @@ import (
 	"math/rand"
 	"time"
 
+	"github.com/hitorii/ticket-booking/internal/events"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 type CommandService struct {
-	Repo *Repository
+	Repo       *Repository
+	Dispatcher *events.Dispatcher
 }
 
 func NewCommandService(repo *Repository) *CommandService {
 	return &CommandService{Repo: repo}
+}
+
+func NewCommandServiceWithDispatcher(repo *Repository, dispatcher *events.Dispatcher) *CommandService {
+	return &CommandService{Repo: repo, Dispatcher: dispatcher}
 }
 
 // InitiatePayment - Command to initiate a new payment
@@ -45,6 +51,19 @@ func (s *CommandService) InitiatePayment(ctx context.Context, req InitiatePaymen
 	if err != nil {
 		return nil, err
 	}
+
+	// Emit event for event-driven flow
+	if s.Dispatcher != nil {
+		payload := events.EventPayload{
+			UserID:    req.UserID,
+			BookingID: req.BookingID,
+			PaymentID: payment.ID,
+			Amount:    req.Amount,
+			Status:    "PENDING",
+		}
+		_ = s.Dispatcher.Publish(ctx, events.EventPaymentInitiated, payment.ID, payload)
+	}
+
 	return payment, nil
 }
 
@@ -84,7 +103,24 @@ func (s *CommandService) VerifyPayment(ctx context.Context, req VerifyPaymentReq
 
 	txnID := fmt.Sprintf("mock_txn_%d", time.Now().Unix())
 
-	return s.Repo.UpdateStatus(req.PaymentID, finalStatus, txnID)
+	err = s.Repo.UpdateStatus(req.PaymentID, finalStatus, txnID)
+	if err != nil {
+		return err
+	}
+
+	// Emit event for event-driven flow
+	if s.Dispatcher != nil {
+		payload := events.EventPayload{
+			UserID:    payment.UserID,
+			BookingID: payment.BookingID,
+			PaymentID: req.PaymentID,
+			Amount:    payment.Amount,
+			Status:    finalStatus,
+		}
+		_ = s.Dispatcher.Publish(ctx, events.EventPaymentVerified, req.PaymentID, payload)
+	}
+
+	return nil
 }
 
 // RefundPayment - Command to refund a payment
@@ -103,7 +139,24 @@ func (s *CommandService) RefundPayment(ctx context.Context, paymentID string) er
 		return errors.New("can only refund successful payments")
 	}
 
-	return s.Repo.UpdateStatus(paymentID, "REFUNDED", "")
+	err = s.Repo.UpdateStatus(paymentID, "REFUNDED", "")
+	if err != nil {
+		return err
+	}
+
+	// Emit event for event-driven flow
+	if s.Dispatcher != nil {
+		payload := events.EventPayload{
+			UserID:    payment.UserID,
+			BookingID: payment.BookingID,
+			PaymentID: paymentID,
+			Amount:    payment.Amount,
+			Status:    "REFUNDED",
+		}
+		_ = s.Dispatcher.Publish(ctx, events.EventPaymentRefunded, paymentID, payload)
+	}
+
+	return nil
 }
 
 // Initialize CommandService with database pool (for compatibility)

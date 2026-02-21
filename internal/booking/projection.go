@@ -1,4 +1,4 @@
-package booking
+﻿package booking
 
 // Real model updater (CQRS projection)
 
@@ -8,12 +8,14 @@ import (
 	"log"
 	"time"
 
+	"github.com/hitorii/ticket-booking/internal/events"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 type ReservationProjection struct {
-	DB *pgxpool.Pool
+	DB         *pgxpool.Pool
+	EventStore *events.Store
 }
 
 func (p *ReservationProjection) Run() {
@@ -74,6 +76,24 @@ func (p *ReservationProjection) Run() {
 				log.Println("Projection failed for reserve:", err)
 			} else {
 				log.Println("Seat reserved in projection:", data.SeatID)
+			}
+
+		} else if eventType == "TicketConfirmed" {
+			var data struct {
+				UserID string `json:"user_id"`
+				SeatID string `json:"seat_id"`
+			}
+			json.Unmarshal(payload, &data)
+
+			// Update reservation status to confirmed
+			_, err := p.DB.Exec(context.Background(),
+				`UPDATE reservations SET status = 'BOOKED' WHERE seat_id = $1`,
+				data.SeatID,
+			)
+			if err != nil {
+				log.Println("Projection failed for confirm:", err)
+			} else {
+				log.Println("Seat confirmed in projection:", data.SeatID)
 			}
 
 		} else if eventType == "TicketCancelled" {

@@ -5,14 +5,20 @@ package movie
 import (
 	"context"
 	"errors"
+
+	"github.com/hitorii/ticket-booking/internal/events"
 )
 
 type CommandService struct {
-	// Could include event store or other command-related dependencies
+	Dispatcher *events.Dispatcher
 }
 
 func NewCommandService() *CommandService {
 	return &CommandService{}
+}
+
+func NewCommandServiceWithDispatcher(dispatcher *events.Dispatcher) *CommandService {
+	return &CommandService{Dispatcher: dispatcher}
 }
 
 // CreateMovieRequest - Request model for creating a movie
@@ -48,6 +54,15 @@ func (s *CommandService) CreateMovie(ctx context.Context, req CreateMovieRequest
 		Duration: req.Duration,
 	}
 
+	// Emit event for event-driven flow
+	if s.Dispatcher != nil {
+		payload := events.EventPayload{
+			MovieID: movie.ID,
+			Name:    req.Name,
+		}
+		_ = s.Dispatcher.Publish(ctx, events.EventMovieCreated, movie.ID, payload)
+	}
+
 	return movie, nil
 }
 
@@ -61,12 +76,27 @@ func (s *CommandService) UpdateMovie(ctx context.Context, id string, req UpdateM
 		return errors.New("movie duration must be positive")
 	}
 
-	// The actual database operation would be handled by a repository
+	// Emit event for event-driven flow
+	if s.Dispatcher != nil {
+		payload := events.EventPayload{
+			MovieID: id,
+			Name:    req.Name,
+		}
+		_ = s.Dispatcher.Publish(ctx, events.EventMovieUpdated, id, payload)
+	}
+
 	return nil
 }
 
 // DeleteMovie - Command to delete a movie
 func (s *CommandService) DeleteMovie(ctx context.Context, id string) error {
-	// The actual database operation would be handled by a repository
+	// Emit event for event-driven flow
+	if s.Dispatcher != nil {
+		payload := events.EventPayload{
+			MovieID: id,
+		}
+		_ = s.Dispatcher.Publish(ctx, events.EventMovieDeleted, id, payload)
+	}
+
 	return nil
 }

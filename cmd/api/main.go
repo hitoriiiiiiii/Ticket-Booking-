@@ -1,4 +1,4 @@
-package main
+﻿package main
 
 import (
 	"log"
@@ -20,76 +20,66 @@ import (
 )
 
 func main() {
-	// Load .env
 	err := godotenv.Load()
 	if err != nil {
-		log.Println("⚠️ No .env file found, using system env variables")
+		log.Println("âš ï¸ No .env file found, using system env variables")
 	}
 
 	r := gin.Default()
-
-	// Load config
 	cfg := config.Load()
-
-	// Connect to Command DB and Query DB
 	cmdDB := db.Connect(os.Getenv("COMMAND_DATABASE_URL"))
 	queryDB := db.Connect(os.Getenv("QUERY_DATABASE_URL"))
 
-	// Initialize Redis for job queue
-	log.Println("🔌 Connecting to Redis for job queue...")
+	log.Println("ðŸ”Œ Connecting to Redis for job queue...")
 	if err := queue.InitRedis(cfg.RedisURL); err != nil {
-		log.Printf("❌ Failed to connect to Redis: %v", err)
-		log.Println("⚠️  Job queue will not work - please ensure Redis is running")
+		log.Printf("âŒ Failed to connect to Redis: %v", err)
+		log.Println("âš ï¸  Job queue will not work")
 	} else {
-		log.Println("✅ Redis connected successfully")
+		log.Println("âœ… Redis connected successfully")
 	}
 	defer queue.Close()
 
-	// Event Store for commands
 	eventStore := &events.Store{DB: cmdDB}
 
-	// Booking - Command Handler for write operations (CQRS pattern)
-	bookingCommandService := booking.NewCommandService(cmdDB)
+	var eventDispatcher *events.Dispatcher
+	if queue.RedisClient != nil {
+		eventDispatcher = events.NewDispatcher(queue.RedisClient, eventStore)
+		log.Println("ðŸ“¢ Event dispatcher initialized")
+	}
+
+	bookingCommandService := booking.NewCommandServiceWithDispatcher(cmdDB, eventDispatcher)
 	bookingCommandHandler := booking.NewCommandHandler(bookingCommandService, eventStore)
-	// Booking - Query handler for read operations
 	bookingQueryService := booking.NewQueryService(queryDB)
 	bookingQueryHandler := booking.NewQueryHandler(bookingQueryService)
 
-	// User - CQRS pattern
-	userCmdService := user.NewCommandService(cmdDB)
+	userCmdService := user.NewCommandServiceWithDispatcher(cmdDB, eventDispatcher)
 	userQueryService := user.NewQueryService(queryDB)
 	userCommandHandler := user.NewCommandHandler(userCmdService)
 	userQueryHandler := user.NewQueryHandler(userQueryService)
 
-
-	// Movie - CQRS pattern
-	movieCmdService := movie.NewCommandService(cmdDB)
+	movieCmdService := movie.NewCommandServiceWithDispatcher(eventDispatcher)
 	movieQueryService := movie.NewQueryService(queryDB)
 	movieCommandHandler := movie.NewCommandHandler(movieCmdService)
 	movieQueryHandler := movie.NewQueryHandler(movieQueryService)
 
-
-	// Show - CQRS pattern
-	showCmdService := show.NewCommandService(cmdDB)
+	showCmdService := show.NewCommandServiceWithDispatcher(eventDispatcher)
 	showQueryService := show.NewQueryService(queryDB)
 	showCommandHandler := show.NewCommandHandler(showCmdService)
 	showQueryHandler := show.NewQueryHandler(showQueryService)
 
-	// Payments - CQRS pattern
 	paymentRepo := payments.NewRepository(cmdDB)
-	paymentCmdService := payments.NewCommandService(paymentRepo)
+	paymentCmdService := payments.NewCommandServiceWithDispatcher(paymentRepo, eventDispatcher)
 	paymentCommandHandler := payments.NewCommandHandler(paymentCmdService)
-	// For payments, we can also create query handler if needed
 	paymentQueryService := payments.NewQueryService(queryDB)
 	paymentQueryHandler := payments.NewQueryHandler(paymentQueryService)
 
-	// Notifications - CQRS pattern
 	notificationQueryService := notification.NewQueryService(queryDB)
 	notificationQueryHandler := notification.NewQueryHandler(notificationQueryService)
 
-	
-	
-	// COMMAND APIs (writes)
+	if eventDispatcher != nil {
+		setupEventSubscribers(eventDispatcher)
+	}
+
 	r.POST("/cmd/reserve", bookingCommandHandler.ReserveTicket)
 	r.POST("/cmd/cancel", bookingCommandHandler.CancelTicket)
 	r.POST("/cmd/confirm", bookingCommandHandler.ConfirmTicket)
@@ -99,7 +89,6 @@ func main() {
 	r.POST("/cmd/payments/initiate", paymentCommandHandler.InitiatePayment)
 	r.POST("/cmd/payments/verify", paymentCommandHandler.VerifyPayment)
 
-	// QUERY APIs (reads)
 	r.GET("/query/reservations/:user_id", bookingQueryHandler.GetUserReservations)
 	r.GET("/query/availability/:seat_id", bookingQueryHandler.CheckAvailability)
 	r.GET("/query/events", bookingQueryHandler.GetEvents)
@@ -109,22 +98,43 @@ func main() {
 	r.GET("/query/shows", showQueryHandler.GetShows)
 	r.GET("/query/notifications/:user_id", notificationQueryHandler.GetUserNotifications)
 
-	// Health
 	r.GET("/health", booking.HealthCheck)
 
-	// Projection 
 	projection := &booking.ReservationProjection{
 		DB:         queryDB,
 		EventStore: eventStore,
 	}
-	go projection.Run() // listens for events and updates query DB
+	go projection.Run()
 
-	// Start Server 
 	port := os.Getenv("PORT")
 	if port == "" {
 		port = "8080"
 	}
 
-	log.Println("🚀 Server running on port", port)
+	log.Println("ðŸš€ Server running on port", port)
 	r.Run(":" + port)
+}
+
+func setupEventSubscribers(dispatcher *events.Dispatcher) {
+	dispatcher.Subscribe(events.EventTicketReserved, func(event events.BaseEvent) error {
+		log.Printf("ðŸ“¥ Event received: %s for aggregate: %s", event.Type, event.AggregateID)
+		return nil
+	})
+	dispatcher.Subscribe(events.EventTicketConfirmed, func(event events.BaseEvent) error {
+		log.Printf("ðŸ“¥ Event received: %s for aggregate: %s", event.Type, event.AggregateID)
+		return nil
+	})
+	dispatcher.Subscribe(events.EventTicketCancelled, func(event events.BaseEvent) error {
+		log.Printf("ðŸ“¥ Event received: %s for aggregate: %s", event.Type, event.AggregateID)
+		return nil
+	})
+	dispatcher.Subscribe(events.EventPaymentVerified, func(event events.BaseEvent) error {
+		log.Printf("ðŸ“¥ Event received: %s for aggregate: %s", event.Type, event.AggregateID)
+		return nil
+	})
+	dispatcher.Subscribe(events.EventUserRegistered, func(event events.BaseEvent) error {
+		log.Printf("ðŸ“¥ Event received: %s for aggregate: %s", event.Type, event.AggregateID)
+		return nil
+	})
+	log.Println("âœ… Event subscribers configured")
 }

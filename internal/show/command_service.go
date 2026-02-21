@@ -6,14 +6,20 @@ import (
 	"context"
 	"errors"
 	"time"
+
+	"github.com/hitorii/ticket-booking/internal/events"
 )
 
 type CommandService struct {
-	// Could include event store or other command-related dependencies
+	Dispatcher *events.Dispatcher
 }
 
 func NewCommandService() *CommandService {
 	return &CommandService{}
+}
+
+func NewCommandServiceWithDispatcher(dispatcher *events.Dispatcher) *CommandService {
+	return &CommandService{Dispatcher: dispatcher}
 }
 
 // CreateShow - Command to create a new show
@@ -37,6 +43,17 @@ func (s *CommandService) CreateShow(ctx context.Context, req CreateShowRequest) 
 		EndTime:   endTime,
 	}
 
+	// Emit event for event-driven flow
+	if s.Dispatcher != nil {
+		payload := events.EventPayload{
+			ShowID:    show.ID,
+			MovieID:   req.MovieID,
+			StartTime: req.StartTime.Format(time.RFC3339),
+			EndTime:   endTime.Format(time.RFC3339),
+		}
+		_ = s.Dispatcher.Publish(ctx, events.EventShowCreated, show.ID, payload)
+	}
+
 	return show, nil
 }
 
@@ -47,12 +64,27 @@ func (s *CommandService) UpdateShow(ctx context.Context, id string, req UpdateSh
 		return errors.New("theater is required")
 	}
 
-	// The actual database operation would be handled by a repository
+	// Emit event for event-driven flow
+	if s.Dispatcher != nil {
+		payload := events.EventPayload{
+			ShowID:  id,
+			MovieID: req.MovieID,
+		}
+		_ = s.Dispatcher.Publish(ctx, events.EventShowUpdated, id, payload)
+	}
+
 	return nil
 }
 
 // DeleteShow - Command to delete a show
 func (s *CommandService) DeleteShow(ctx context.Context, id string) error {
-	// The actual database operation would be handled by a repository
+	// Emit event for event-driven flow
+	if s.Dispatcher != nil {
+		payload := events.EventPayload{
+			ShowID: id,
+		}
+		_ = s.Dispatcher.Publish(ctx, events.EventShowDeleted, id, payload)
+	}
+
 	return nil
 }
