@@ -1,0 +1,127 @@
+# Docker Compose for 50K Concurrent Users - Scaling Configuration
+# This file adds PgBouncer and Redis Cluster for production scaling
+# Usage: docker-compose -f docker-compose.yml -f docker-compose.scaling.yml up
+
+version: '3.8'
+
+services:
+  # PGBOUNCER - Connection pooling for high concurrency
+  pgbouncer_cmd:
+    image: pgbouncer/pgbouncer
+    container_name: ticket-pgbouncer-cmd
+    restart: always
+
+    environment:
+      DATABASE_URL: "postgres://ticket:ticket123@postgres_cmd:5432/ticket_cmd_db"
+      POOL_MODE: "transaction"
+      MAX_CLIENT_CONN: "1000"
+      DEFAULT_POOL_SIZE: "100"
+      MIN_POOL_SIZE: "20"
+
+    ports:
+      - "6432:5432"
+
+    depends_on:
+      - postgres_cmd
+
+    networks:
+      - ticket-booking-network
+
+  pgbouncer_query:
+    image: pgbouncer/pgbouncer
+    container_name: ticket-pgbouncer-query
+    restart: always
+
+    environment:
+      DATABASE_URL: "postgres://ticket:ticket123@postgres_query:5432/ticket_query_db"
+      POOL_MODE: "transaction"
+      MAX_CLIENT_CONN: "1000"
+      DEFAULT_POOL_SIZE: "100"
+      MIN_POOL_SIZE: "20"
+
+    ports:
+      - "6433:5432"
+
+    depends_on:
+      - postgres_query
+
+    networks:
+      - ticket-booking-network
+
+  # REDIS CLUSTER for production (6 nodes - 3 master + 3 replica)
+  redis-cluster:
+    image: redis:7-alpine
+    container_name: redis-cluster-init
+    restart: on-failure
+    command: >
+      sh -c "echo 'yes' | redis-cli --cluster create 
+      redis-node-1:6379 redis-node-2:6379 redis-node-3:6379 
+      redis-node-4:6379 redis-node-5:6379 redis-node-6:6379 
+      --cluster-replicas 1"
+    depends_on:
+      - redis-node-1
+      - redis-node-2
+      - redis-node-3
+      - redis-node-4
+      - redis-node-5
+      - redis-node-6
+
+  redis-node-1:
+    image: redis:7-alpine
+    container_name: redis-node-1
+    restart: always
+    command: redis-server --cluster-enabled yes --cluster-config-file nodes.conf --cluster-node-timeout 5000 --appendonly yes
+    ports:
+      - "7001:6379"
+    networks:
+      - ticket-booking-network
+
+  redis-node-2:
+    image: redis:7-alpine
+    container_name: redis-node-2
+    restart: always
+    command: redis-server --cluster-enabled yes --cluster-config-file nodes.conf --cluster-node-timeout 5000 --appendonly yes
+    ports:
+      - "7002:6379"
+    networks:
+      - ticket-booking-network
+
+  redis-node-3:
+    image: redis:7-alpine
+    container_name: redis-node-3
+    restart: always
+    command: redis-server --cluster-enabled yes --cluster-config-file nodes.conf --cluster-node-timeout 5000 --appendonly yes
+    ports:
+      - "7003:6379"
+    networks:
+      - ticket-booking-network
+
+  redis-node-4:
+    image: redis:7-alpine
+    container_name: redis-node-4
+    restart: always
+    command: redis-server --cluster-enabled yes --cluster-config-file nodes.conf --cluster-node-timeout 5000 --appendonly yes
+    ports:
+      - "7004:6379"
+    networks:
+      - ticket-booking-network
+
+  redis-node-5:
+    image: redis:7-alpine
+    container_name: redis-node-5
+    restart: always
+    command: redis-server --cluster-enabled yes --cluster-config-file nodes.conf --cluster-node-timeout 5000 --appendonly yes
+    ports:
+      - "7005:6379"
+    networks:
+      - ticket-booking-network
+
+  redis-node-6:
+    image: redis:7-alpine
+    container_name: redis-node-6
+    restart: always
+    command: redis-server --cluster-enabled yes --cluster-config-file nodes.conf --cluster-node-timeout 5000 --appendonly yes
+    ports:
+      - "7006:6379"
+    networks:
+      - ticket-booking-network

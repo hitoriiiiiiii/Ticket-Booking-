@@ -3,15 +3,20 @@ package booking
 import (
 	"context"
 	"errors"
+	"fmt"
 
 	"github.com/hitorii/ticket-booking/internal/events"
 	"github.com/hitorii/ticket-booking/internal/notification"
+	"github.com/hitorii/ticket-booking/internal/utils"
 	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/redis/go-redis/v9"
 )
 
 type CommandService struct {
-	DB        *pgxpool.Pool
+	DB         *pgxpool.Pool
 	Dispatcher *events.Dispatcher
+	RedisClient *redis.Client
+	Lock       *utils.DistributedLock
 }
 
 func NewCommandService(db *pgxpool.Pool) *CommandService {
@@ -22,8 +27,39 @@ func NewCommandServiceWithDispatcher(db *pgxpool.Pool, dispatcher *events.Dispat
 	return &CommandService{DB: db, Dispatcher: dispatcher}
 }
 
-// ReserveTicket - Command to reserve a ticket
+// NewCommandServiceWithLock creates a command service with distributed locking support
+func NewCommandServiceWithLock(db *pgxpool.Pool, dispatcher *events.Dispatcher, redisClient *redis.Client) *CommandService {
+	var lock *utils.DistributedLock
+	if redisClient != nil {
+		lock = utils.NewDistributedLock(redisClient)
+	}
+	return &CommandService{
+		DB:         db,
+		Dispatcher: dispatcher,
+		RedisClient: redisClient,
+		Lock:       lock,
+	}
+}
+
+// ReserveTicket - Command to reserve a ticket with distributed locking
 func (s *CommandService) ReserveTicket(ctx context.Context, userID, seatID string) error {
+	// Use distributed lock if available to prevent race conditions
+	if s.Lock != nil {
+		err := s.Lock.WithSeatLock(ctx, seatID, func() error {
+			return s.reserveTicketInternal(ctx, userID, seatID)
+		})
+		if err != nil {
+			return fmt.Errorf("failed to reserve ticket: %w", err)
+		}
+		return nil
+	}
+	
+	// Fallback to internal method if no lock available
+	return s.reserveTicketInternal(ctx, userID, seatID)
+}
+
+// reserveTicketInternal is the actual reservation logic
+func (s *CommandService) reserveTicketInternal(ctx context.Context, userID, seatID string) error {
 	_, err := s.DB.Exec(
 		ctx,
 		"INSERT INTO reservations (seat_id, user_id, status) VALUES ($1,$2,'HELD')",
@@ -55,8 +91,24 @@ func (s *CommandService) ReserveTicket(ctx context.Context, userID, seatID strin
 	return nil
 }
 
-// ConfirmTicket - Command to confirm a ticket reservation
+// ConfirmTicket - Command to confirm a ticket reservation with distributed locking
 func (s *CommandService) ConfirmTicket(ctx context.Context, userID, seatID string) error {
+	// Use distributed lock if available
+	if s.Lock != nil {
+		err := s.Lock.WithSeatLock(ctx, seatID, func() error {
+			return s.confirmTicketInternal(ctx, userID, seatID)
+		})
+		if err != nil {
+			return fmt.Errorf("failed to confirm ticket: %w", err)
+		}
+		return nil
+	}
+	
+	return s.confirmTicketInternal(ctx, userID, seatID)
+}
+
+// confirmTicketInternal is the actual confirmation logic
+func (s *CommandService) confirmTicketInternal(ctx context.Context, userID, seatID string) error {
 	res, err := s.DB.Exec(
 		ctx,
 		`UPDATE reservations 

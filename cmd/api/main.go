@@ -11,6 +11,7 @@ import (
 	"github.com/hitorii/ticket-booking/internal/config"
 	"github.com/hitorii/ticket-booking/internal/db"
 	"github.com/hitorii/ticket-booking/internal/events"
+	"github.com/hitorii/ticket-booking/internal/middleware"
 	"github.com/hitorii/ticket-booking/internal/movie"
 	"github.com/hitorii/ticket-booking/internal/payments"
 	"github.com/hitorii/ticket-booking/internal/queue"
@@ -26,6 +27,9 @@ func main() {
 	}
 
 	r := gin.Default()
+	
+	// Apply rate limiter - allow 5000 requests per minute for 50K users scaling
+	r.Use(middleware.RateLimit(5000))
 	cfg := config.Load()
 	cmdDB := db.Connect(os.Getenv("COMMAND_DATABASE_URL"))
 	queryDB := db.Connect(os.Getenv("QUERY_DATABASE_URL"))
@@ -47,7 +51,8 @@ func main() {
 		log.Println("ðŸ“¢ Event dispatcher initialized")
 	}
 
-	bookingCommandService := booking.NewCommandServiceWithDispatcher(cmdDB, eventDispatcher)
+	// Use distributed locking for high concurrency (50K users support)
+	bookingCommandService := booking.NewCommandServiceWithLock(cmdDB, eventDispatcher, queue.RedisClient)
 	bookingCommandHandler := booking.NewCommandHandler(bookingCommandService, eventStore)
 	bookingQueryService := booking.NewQueryService(queryDB)
 	bookingQueryHandler := booking.NewQueryHandler(bookingQueryService)
