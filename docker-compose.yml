@@ -1,5 +1,4 @@
 services:
-
   # COMMAND DATABASE (WRITE DB)
 
   postgres_cmd:
@@ -8,12 +7,12 @@ services:
     restart: always
 
     environment:
-      POSTGRES_USER: "${DB_USER}"
-      POSTGRES_PASSWORD: "${DB_PASSWORD}"
-      POSTGRES_DB: "ticket_cmd_db"
+      POSTGRES_USER: '${DB_USER}'
+      POSTGRES_PASSWORD: '${DB_PASSWORD}'
+      POSTGRES_DB: 'ticket_cmd_db'
 
     ports:
-      - "5433:5432"
+      - '5433:5432'
 
     volumes:
       - ./postgres-cmd-data:/var/lib/postgresql/data
@@ -22,7 +21,7 @@ services:
       - ticket-booking-network
 
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${DB_USER}"]
+      test: ['CMD-SHELL', 'pg_isready -U ${DB_USER}']
       interval: 5s
       timeout: 5s
       retries: 5
@@ -35,12 +34,12 @@ services:
     restart: always
 
     environment:
-      POSTGRES_USER: "${DB_USER}"
-      POSTGRES_PASSWORD: "${DB_PASSWORD}"
-      POSTGRES_DB: "ticket_query_db"
+      POSTGRES_USER: '${DB_USER}'
+      POSTGRES_PASSWORD: '${DB_PASSWORD}'
+      POSTGRES_DB: 'ticket_query_db'
 
     ports:
-      - "5434:5432"
+      - '5434:5432'
 
     volumes:
       - ./postgres-query-data:/var/lib/postgresql/data
@@ -49,11 +48,10 @@ services:
       - ticket-booking-network
 
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${DB_USER}"]
+      test: ['CMD-SHELL', 'pg_isready -U ${DB_USER}']
       interval: 5s
       timeout: 5s
       retries: 5
-
 
   # REDIS (QUEUE + CACHE)
 
@@ -63,13 +61,13 @@ services:
     restart: always
 
     ports:
-      - "6379:6379"
+      - '6379:6379'
 
     networks:
       - ticket-booking-network
 
     healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
+      test: ['CMD', 'redis-cli', 'ping']
       interval: 5s
       timeout: 5s
       retries: 5
@@ -86,7 +84,7 @@ services:
       ZOOKEEPER_TICK_TIME: 2000
 
     ports:
-      - "2181:2181"
+      - '2181:2181'
 
     networks:
       - ticket-booking-network
@@ -102,12 +100,12 @@ services:
       - zookeeper
 
     ports:
-      - "9092:9092"
+      - '9092:9092'
 
     environment:
       KAFKA_BROKER_ID: 1
 
-      KAFKA_ZOOKEEPER_CONNECT: "zookeeper:2181"
+      KAFKA_ZOOKEEPER_CONNECT: 'zookeeper:2181'
 
       # Kafka internal + external listeners
       KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092
@@ -115,11 +113,10 @@ services:
 
       # Required configs
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
-      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: 'true'
 
     networks:
       - ticket-booking-network
-
 
   # API SERVICE (COMMAND SIDE)
 
@@ -135,18 +132,18 @@ services:
       - .env
 
     environment:
-      COMMAND_DATABASE_URL: "postgres://${DB_USER}:${DB_PASSWORD}@postgres_cmd:5432/ticket_cmd_db?sslmode=disable"
-      QUERY_DATABASE_URL: "postgres://${DB_USER}:${DB_PASSWORD}@postgres_query:5432/ticket_query_db?sslmode=disable"
+      COMMAND_DATABASE_URL: 'postgres://${DB_USER}:${DB_PASSWORD}@postgres_cmd:5432/ticket_cmd_db?sslmode=disable'
+      QUERY_DATABASE_URL: 'postgres://${DB_USER}:${DB_PASSWORD}@postgres_query:5432/ticket_query_db?sslmode=disable'
 
-      REDIS_URL: "redis://redis:6379"
+      REDIS_URL: 'redis://redis:6379'
 
       # Kafka connection
-      KAFKA_BROKER: "kafka:9092"
+      KAFKA_BROKER: 'kafka:9092'
 
-      PORT: "8081"
+      PORT: '8081'
 
     ports:
-      - "8081:8081"
+      - '8081:8081'
 
     depends_on:
       postgres_cmd:
@@ -175,13 +172,13 @@ services:
       - .env
 
     environment:
-      COMMAND_DATABASE_URL: "postgres://${DB_USER}:${DB_PASSWORD}@postgres_cmd:5432/ticket_cmd_db?sslmode=disable"
-      QUERY_DATABASE_URL: "postgres://${DB_USER}:${DB_PASSWORD}@postgres_query:5432/ticket_query_db?sslmode=disable"
+      COMMAND_DATABASE_URL: 'postgres://${DB_USER}:${DB_PASSWORD}@postgres_cmd:5432/ticket_cmd_db?sslmode=disable'
+      QUERY_DATABASE_URL: 'postgres://${DB_USER}:${DB_PASSWORD}@postgres_query:5432/ticket_query_db?sslmode=disable'
 
-      REDIS_URL: "redis://redis:6379"
+      REDIS_URL: 'redis://redis:6379'
 
       # Kafka connection
-      KAFKA_BROKER: "kafka:9092"
+      KAFKA_BROKER: 'kafka:9092'
 
     depends_on:
       postgres_cmd:

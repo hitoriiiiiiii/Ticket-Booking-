@@ -50,10 +50,10 @@ A high-performance backend for ticket booking applications, inspired by platform
 
 ### 🏗 Backend Architecture
 
-| Technology | Description |
-|------------|-------------|
-| **Golang (Go)** | High-performance backend service with native concurrency support |
-| **RESTful API** | API layer for booking operations using Gin web framework |
+| Technology               | Description                                                           |
+| ------------------------ | --------------------------------------------------------------------- |
+| **Golang (Go)**          | High-performance backend service with native concurrency support      |
+| **RESTful API**          | API layer for booking operations using Gin web framework              |
 | **Layered Architecture** | Clean separation between Controllers, Services, and Repository layers |
 
 ---
@@ -190,6 +190,7 @@ A high-performance backend for ticket booking applications, inspired by platform
 ```
 
 **Data Flow:**
+
 1. **Command API** handles Reserve/Cancel operations → writes to Primary DB (Postgres)
 2. **Query API** handles Availability queries → reads from Read Replica (Postgres)
 3. **Events** are published to Kafka Topic: `booking.events`
@@ -200,12 +201,12 @@ A high-performance backend for ticket booking applications, inspired by platform
 
 ### 🗄 Database & Storage
 
-| Feature | Implementation |
-|---------|----------------|
-| **PostgreSQL 15** | Relational DB for shows, seats, bookings (Command & Query databases) |
-| **ACID Transactions** | Ensures safe booking without double reservation |
-| **Database Indexing** | Faster show/search queries |
-| **GORM** | ORM for database operations |
+| Feature               | Implementation                                                       |
+| --------------------- | -------------------------------------------------------------------- |
+| **PostgreSQL 15**     | Relational DB for shows, seats, bookings (Command & Query databases) |
+| **ACID Transactions** | Ensures safe booking without double reservation                      |
+| **Database Indexing** | Faster show/search queries                                           |
+| **GORM**              | ORM for database operations                                          |
 
 ---
 
@@ -309,6 +310,7 @@ A high-performance backend for ticket booking applications, inspired by platform
 ```
 
 **Async Operations:**
+
 - ✅ Booking confirmation emails/SMS
 - ✅ Payment verification
 - ✅ Reservation expiry cleanup
@@ -347,6 +349,7 @@ A high-performance backend for ticket booking applications, inspired by platform
 ```
 
 **Events:**
+
 - `TicketReserved` - Initial seat reservation
 - `SeatLocked` - Seat temporarily locked
 - `TicketConfirmed` - Payment successful
@@ -389,12 +392,12 @@ A high-performance backend for ticket booking applications, inspired by platform
 └─────────────────────────────────────────────────────────────┘
 ```
 
-| Feature | Implementation |
-|---------|----------------|
-| **JWT Authentication** | Secure session handling with token-based auth |
-| **Role-Based Access Control (RBAC)** | Admin & User roles |
-| **Rate Limiting** | Prevent API abuse (5000 req/min) |
-| **Structured Logging** | Debugging & tracing |
+| Feature                              | Implementation                                |
+| ------------------------------------ | --------------------------------------------- |
+| **JWT Authentication**               | Secure session handling with token-based auth |
+| **Role-Based Access Control (RBAC)** | Admin & User roles                            |
+| **Rate Limiting**                    | Prevent API abuse (5000 req/min)              |
+| **Structured Logging**               | Debugging & tracing                           |
 
 ---
 
@@ -433,49 +436,49 @@ A high-performance backend for ticket booking applications, inspired by platform
 
 ### 🐳 DevOps & Deployment
 
-| Tool | Purpose |
-|------|---------|
-| **Docker** | Containerized backend |
+| Tool               | Purpose                                        |
+| ------------------ | ---------------------------------------------- |
+| **Docker**         | Containerized backend                          |
 | **Docker Compose** | Multi-service setup (DB + Redis + API + Kafka) |
-| **Kubernetes** | Production deployment with HPA |
-| **Nginx** | Load balancer |
+| **Kubernetes**     | Production deployment with HPA                 |
+| **Nginx**          | Load balancer                                  |
 
 ---
 
 ### 📈 Monitoring & Logging
 
-| Feature | Status |
-|---------|--------|
-| **Structured Logging** | ✅ Implemented |
-| **Request Logging** | ✅ Implemented |
-| **Error Tracing** | ✅ Implemented |
+| Feature                  | Status          |
+| ------------------------ | --------------- |
+| **Structured Logging**   | ✅ Implemented  |
+| **Request Logging**      | ✅ Implemented  |
+| **Error Tracing**        | ✅ Implemented  |
 | **Prometheus + Grafana** | 🔜 Future Scope |
 
 ---
 
 ### 🧪 Testing & Reliability
 
-| Type | Description |
-|------|-------------|
-| **Unit Testing** | Go testing package |
-| **Integration Testing** | Booking workflow tests |
-| **API Testing** | Postman collection ready |
+| Type                    | Description              |
+| ----------------------- | ------------------------ |
+| **Unit Testing**        | Go testing package       |
+| **Integration Testing** | Booking workflow tests   |
+| **API Testing**         | Postman collection ready |
 
 ---
 
 ## 🛠 Technology Stack
 
-| Category          | Technology                    |
-| ----------------- | ----------------------------- |
-| Language          | Go 1.21+                     |
-| Framework         | Gin                           |
-| Database          | PostgreSQL 15                 |
-| Cache             | Redis 7                       |
-| ORM               | GORM                          |
-| Authentication    | JWT                           |
-| Message Queue     | Kafka                         |
-| Container         | Docker                        |
-| Orchestration     | Kubernetes                    |
+| Category       | Technology    |
+| -------------- | ------------- |
+| Language       | Go 1.21+      |
+| Framework      | Gin           |
+| Database       | PostgreSQL 15 |
+| Cache          | Redis 7       |
+| ORM            | GORM          |
+| Authentication | JWT           |
+| Message Queue  | Kafka         |
+| Container      | Docker        |
+| Orchestration  | Kubernetes    |
 
 ---
 
@@ -527,15 +530,15 @@ KAFKA_BROKER=localhost:9092
 
 The Docker Compose setup includes the following services:
 
-| Service | Container Name | Port | Description |
-|---------|---------------|------|-------------|
-| `postgres_cmd` | ticket-cmd-db | 5433 | Command Database (Write) |
-| `postgres_query` | ticket-query-db | 5434 | Query Database (Read) |
-| `redis` | ticket-booking-redis | 6379 | Cache & Queue |
-| `zookeeper` | ticket-zookeeper | 2181 | Kafka Manager |
-| `kafka` | ticket-kafka | 9092 | Message Broker |
-| `api` | ticket-booking-api | 8081 | API Server |
-| `worker` | ticket-booking-worker | - | Background Worker |
+| Service          | Container Name        | Port | Description              |
+| ---------------- | --------------------- | ---- | ------------------------ |
+| `postgres_cmd`   | ticket-cmd-db         | 5433 | Command Database (Write) |
+| `postgres_query` | ticket-query-db       | 5434 | Query Database (Read)    |
+| `redis`          | ticket-booking-redis  | 6379 | Cache & Queue            |
+| `zookeeper`      | ticket-zookeeper      | 2181 | Kafka Manager            |
+| `kafka`          | ticket-kafka          | 9092 | Message Broker           |
+| `api`            | ticket-booking-api    | 8081 | API Server               |
+| `worker`         | ticket-booking-worker | -    | Background Worker        |
 
 ### Quick Start with Docker Compose
 
@@ -580,41 +583,42 @@ docker exec -it ticket-query-db psql -U ticket -d ticket_query_db
 > **For complete API documentation with request/response examples, refer to [Postman Documentation](./docs/POSTMAN.md)**
 
 ### Base URL
+
 ```
 http://localhost:8081
 ```
 
 ### Command Endpoints (Write Operations)
 
-| Method | Endpoint | Description | Request Body |
-|--------|----------|-------------|--------------|
-| POST | `/cmd/reserve` | Reserve a ticket | `{"user_id": "1", "seat_id": "A1"}` |
-| POST | `/cmd/confirm` | Confirm ticket booking | `{"user_id": "1", "seat_id": "A1"}` |
-| POST | `/cmd/cancel` | Cancel ticket reservation | `{"user_id": "1", "seat_id": "A1"}` |
-| POST | `/cmd/users/register` | Register new user | `{"username": "john", "email": "john@example.com", "password": "pass123", "is_admin": false}` |
-| POST | `/cmd/movies` | Create new movie | `{"name": "Inception", "genre": "Sci-Fi", "duration": 148}` |
-| POST | `/cmd/shows` | Create new show | `{"movie_id": 1, "theater": "Theater A", "start_time": "2024-01-20T14:00:00Z"}` |
-| POST | `/cmd/payments/initiate` | Initiate payment | `{"booking_id": "1", "user_id": "1", "amount": 500}` |
-| POST | `/cmd/payments/verify` | Verify payment | `{"payment_id": "pay_xxx", "mode": "success"}` |
+| Method | Endpoint                 | Description               | Request Body                                                                                  |
+| ------ | ------------------------ | ------------------------- | --------------------------------------------------------------------------------------------- |
+| POST   | `/cmd/reserve`           | Reserve a ticket          | `{"user_id": "1", "seat_id": "A1"}`                                                           |
+| POST   | `/cmd/confirm`           | Confirm ticket booking    | `{"user_id": "1", "seat_id": "A1"}`                                                           |
+| POST   | `/cmd/cancel`            | Cancel ticket reservation | `{"user_id": "1", "seat_id": "A1"}`                                                           |
+| POST   | `/cmd/users/register`    | Register new user         | `{"username": "john", "email": "john@example.com", "password": "pass123", "is_admin": false}` |
+| POST   | `/cmd/movies`            | Create new movie          | `{"name": "Inception", "genre": "Sci-Fi", "duration": 148}`                                   |
+| POST   | `/cmd/shows`             | Create new show           | `{"movie_id": 1, "theater": "Theater A", "start_time": "2024-01-20T14:00:00Z"}`               |
+| POST   | `/cmd/payments/initiate` | Initiate payment          | `{"booking_id": "1", "user_id": "1", "amount": 500}`                                          |
+| POST   | `/cmd/payments/verify`   | Verify payment            | `{"payment_id": "pay_xxx", "mode": "success"}`                                                |
 
 ### Query Endpoints (Read Operations)
 
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/query/movies` | List all movies |
-| GET | `/query/movies/:id` | Get movie by ID |
-| GET | `/query/shows` | List all shows |
-| GET | `/query/availability/:seat_id` | Check seat availability |
-| GET | `/query/reservations/:user_id` | Get user reservations |
-| GET | `/query/users` | List all users |
-| GET | `/query/events` | Get all events |
-| GET | `/query/notifications/:user_id` | Get user notifications |
+| Method | Endpoint                        | Description             |
+| ------ | ------------------------------- | ----------------------- |
+| GET    | `/query/movies`                 | List all movies         |
+| GET    | `/query/movies/:id`             | Get movie by ID         |
+| GET    | `/query/shows`                  | List all shows          |
+| GET    | `/query/availability/:seat_id`  | Check seat availability |
+| GET    | `/query/reservations/:user_id`  | Get user reservations   |
+| GET    | `/query/users`                  | List all users          |
+| GET    | `/query/events`                 | Get all events          |
+| GET    | `/query/notifications/:user_id` | Get user notifications  |
 
 ### System Endpoints
 
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/health` | Health check |
+| Method | Endpoint  | Description  |
+| ------ | --------- | ------------ |
+| GET    | `/health` | Health check |
 
 ---
 
@@ -756,6 +760,7 @@ CREATE INDEX idx_events_type ON events(event_type);
 ### Query Database (Read)
 
 Optimized for fast queries:
+
 - `reservations` - User bookings
 - `shows` & `movies` - Showtime data
 - `payments` - Payment records
@@ -783,19 +788,19 @@ go test ./internal/booking/... -v
 
 ### Test Coverage
 
-| Package | Tests | Status |
-|---------|-------|--------|
-| booking | 5 test cases | ✅ PASS |
-| user | 4 test cases | ✅ PASS |
-| movie | 4 test cases | ✅ PASS |
-| show | 5 test cases | ✅ PASS |
-| payments | 7 test cases | ✅ PASS |
-| notification | 3 test cases | ✅ PASS |
-| events | 5 test cases | ✅ PASS |
-| middleware | 7 test cases | ✅ PASS |
-| queue | 4 test cases | ✅ PASS |
-| db | 2 test cases (skipped - integration) | ✅ PASS |
-| utils | 4 test cases | ✅ PASS |
+| Package      | Tests                                | Status  |
+| ------------ | ------------------------------------ | ------- |
+| booking      | 5 test cases                         | ✅ PASS |
+| user         | 4 test cases                         | ✅ PASS |
+| movie        | 4 test cases                         | ✅ PASS |
+| show         | 5 test cases                         | ✅ PASS |
+| payments     | 7 test cases                         | ✅ PASS |
+| notification | 3 test cases                         | ✅ PASS |
+| events       | 5 test cases                         | ✅ PASS |
+| middleware   | 7 test cases                         | ✅ PASS |
+| queue        | 4 test cases                         | ✅ PASS |
+| db           | 2 test cases (skipped - integration) | ✅ PASS |
+| utils        | 4 test cases                         | ✅ PASS |
 
 ### Test Types
 

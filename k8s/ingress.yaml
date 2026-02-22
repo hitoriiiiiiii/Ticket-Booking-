@@ -5,32 +5,32 @@ metadata:
   namespace: ticket-booking
   annotations:
     nginx.ingress.kubernetes.io/rewrite-target: /
-    nginx.ingress.kubernetes.io/proxy-body-size: "50m"
-    nginx.ingress.kubernetes.io/proxy-connect-timeout: "30"
-    nginx.ingress.kubernetes.io/proxy-read-timeout: "300"
-    nginx.ingress.kubernetes.io/proxy-send-timeout: "300"
-    nginx.ingress.kubernetes.io/limit-rps: "1000"
-    nginx.ingress.kubernetes.io/limit-connections: "100"
-    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+    nginx.ingress.kubernetes.io/proxy-body-size: '50m'
+    nginx.ingress.kubernetes.io/proxy-connect-timeout: '30'
+    nginx.ingress.kubernetes.io/proxy-read-timeout: '300'
+    nginx.ingress.kubernetes.io/proxy-send-timeout: '300'
+    nginx.ingress.kubernetes.io/limit-rps: '1000'
+    nginx.ingress.kubernetes.io/limit-connections: '100'
+    cert-manager.io/cluster-issuer: 'letsencrypt-prod'
   labels:
     app: ticket-booking
 spec:
   ingressClassName: nginx
   tls:
-  - hosts:
-    - api.ticket-booking.com
-    secretName: ticket-booking-tls
+    - hosts:
+        - api.ticket-booking.com
+      secretName: ticket-booking-tls
   rules:
-  - host: api.ticket-booking.com
-    http:
-      paths:
-      - path: /
-        pathType: Prefix
-        backend:
-          service:
-            name: ticket-api
-            port:
-              number: 80
+    - host: api.ticket-booking.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: ticket-api
+                port:
+                  number: 80
 ---
 apiVersion: v1
 kind: Service
@@ -42,9 +42,9 @@ spec:
   selector:
     app: nginx
   ports:
-  - name: http
-    port: 80
-    targetPort: 80
-  - name: https
-    port: 443
-    targetPort: 443
+    - name: http
+      port: 80
+      targetPort: 80
+    - name: https
+      port: 443
+      targetPort: 443

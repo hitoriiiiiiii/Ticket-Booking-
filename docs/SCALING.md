@@ -7,6 +7,7 @@ This document describes the scaling improvements made to support 50,000 concurre
 ## The Problem
 
 When the ticket booking system launched, it faced several critical issues:
+
 - **Database Connection Exhaustion**: With only a few connections available, the system would crash when many users tried to book simultaneously
 - **Race Conditions**: Multiple users could book the same seat simultaneously, leading to overbooking
 - **No Caching**: Every request hit the database directly, causing slow response times
@@ -19,12 +20,14 @@ When the ticket booking system launched, it faced several critical issues:
 The first phase addressed critical bottlenecks that were causing system failures under load.
 
 **Rate Limiter Middleware**
+
 - Added application-level rate limiting at 5,000 requests per minute per IP
 - This prevents any single user from overwhelming the system
 - Located in: `internal/middleware/rateLimiter.go`
 - Uses an in-memory sliding window algorithm with automatic cleanup
 
 **Distributed Locking**
+
 - Implemented Redis-based distributed locking for seat reservations
 - When a user selects a seat, a 10-second lock is acquired
 - This prevents race conditions where two users book the same seat
@@ -32,6 +35,7 @@ The first phase addressed critical bottlenecks that were causing system failures
 - Lock automatically releases after timeout or when booking completes
 
 **Database Connection Pool**
+
 - Configured PostgreSQL connection pool with MaxConns=100 and MinConns=20
 - Connections are reused efficiently instead of creating new ones per request
 - Connection lifetime: 1 hour, idle timeout: 30 minutes
@@ -44,11 +48,11 @@ The second phase added caching to dramatically reduce database load.
 **Redis Caching Strategy**
 Three different cache durations based on data volatility:
 
-| Data Type | Cache TTL | Rationale |
-|-----------|-----------|-----------|
-| Seat Availability | 5 seconds | Changes frequently during booking |
-| Movie Listings | 60 seconds | Updates infrequently |
-| Show Listings | 30 seconds | Moderate update frequency |
+| Data Type         | Cache TTL  | Rationale                         |
+| ----------------- | ---------- | --------------------------------- |
+| Seat Availability | 5 seconds  | Changes frequently during booking |
+| Movie Listings    | 60 seconds | Updates infrequently              |
+| Show Listings     | 30 seconds | Moderate update frequency         |
 
 - Located in: `internal/utils/cache.go`
 - Cache invalidation happens automatically when seats are booked
@@ -59,6 +63,7 @@ Three different cache durations based on data volatility:
 The third phase added connection pooling and clustering for database scalability.
 
 **PgBouncer Connection Pooling**
+
 - Added PgBouncer middleware between application and PostgreSQL
 - Two instances: one for Command DB (writes) and one for Query DB (reads)
 - Configuration:
@@ -69,6 +74,7 @@ The third phase added connection pooling and clustering for database scalability
 - Allows hundreds of application instances to share database connections
 
 **Redis Cluster**
+
 - Created a 6-node Redis Cluster (3 masters + 3 replicas)
 - Provides automatic failover and high availability
 - Nodes: redis-node-1 through redis-node-6 (ports 7001-7006)
@@ -80,6 +86,7 @@ The third phase added connection pooling and clustering for database scalability
 The final phase deployed the infrastructure for production-level scaling.
 
 **nginx Load Balancer**
+
 - Acts as reverse proxy and load balancer
 - Key configurations:
   - Worker connections: 10,240 (can handle many concurrent connections)
@@ -91,6 +98,7 @@ The final phase deployed the infrastructure for production-level scaling.
 - Uses least_conn algorithm to distribute load fairly
 
 **Kubernetes Deployment**
+
 - Container orchestration for automatic scaling
 - Components:
   - `k8s/namespace.yaml`: Isolated namespace "ticket-booking"
@@ -99,6 +107,7 @@ The final phase deployed the infrastructure for production-level scaling.
   - `k8s/hpa.yaml`: Horizontal Pod Autoscaler
 
 **Horizontal Pod Autoscaler (HPA)**
+
 - Automatically scales API pods based on load
 - Configuration:
   - Minimum replicas: 3 (always running)
@@ -110,35 +119,41 @@ The final phase deployed the infrastructure for production-level scaling.
 
 ## Files Created for Scaling
 
-| File | Purpose |
-|------|---------|
-| `internal/utils/lock.go` | Redis-based distributed locking for seat reservations |
-| `internal/utils/cache.go` | Redis caching for seats, movies, and shows |
-| `docker-compose.scaling.yml` | PgBouncer + Redis Cluster configuration |
-| `docker/nginx.conf` | Load balancer with rate limiting |
-| `k8s/namespace.yaml` | Kubernetes namespace |
-| `k8s/api-deployment.yaml` | K8s API deployment |
-| `k8s/hpa.yaml` | Horizontal pod autoscaling |
-| `k8s/ingress.yaml` | K8s ingress + LoadBalancer |
+| File                         | Purpose                                               |
+| ---------------------------- | ----------------------------------------------------- |
+| `internal/utils/lock.go`     | Redis-based distributed locking for seat reservations |
+| `internal/utils/cache.go`    | Redis caching for seats, movies, and shows            |
+| `docker-compose.scaling.yml` | PgBouncer + Redis Cluster configuration               |
+| `docker/nginx.conf`          | Load balancer with rate limiting                      |
+| `k8s/namespace.yaml`         | Kubernetes namespace                                  |
+| `k8s/api-deployment.yaml`    | K8s API deployment                                    |
+| `k8s/hpa.yaml`               | Horizontal pod autoscaling                            |
+| `k8s/ingress.yaml`           | K8s ingress + LoadBalancer                            |
 
 ## Deployment Options
 
 ### Option 1: Docker Compose (Development/Small Scale)
+
 Supports approximately 1,000-5,000 concurrent users
+
 ```
 bash
 docker-compose up -d
 ```
 
 ### Option 2: Docker Compose with Scaling (Medium Scale)
+
 Supports approximately 10,000-25,000 concurrent users
+
 ```
 bash
 docker-compose -f docker-compose.yml -f docker-compose.scaling.yml up -d
 ```
 
 ### Option 3: Kubernetes (Production 50K Users)
+
 Supports 50,000+ concurrent users
+
 ```
 bash
 kubectl apply -f k8s/
@@ -146,13 +161,13 @@ kubectl apply -f k8s/
 
 ## Performance Expectations
 
-| Metric | Before Scaling | After Scaling |
-|--------|----------------|---------------|
-| Concurrent Users | 100-200 | 50,000+ |
-| Tickets/Second | 10-20 | 500-1,000 |
-| API Requests/Second | ~500 | ~50,000 |
-| Database Connections | 10-20 | 100+pooled |
-| Response Time | 2-5 seconds | <200ms |
+| Metric               | Before Scaling | After Scaling |
+| -------------------- | -------------- | ------------- |
+| Concurrent Users     | 100-200        | 50,000+       |
+| Tickets/Second       | 10-20          | 500-1,000     |
+| API Requests/Second  | ~500           | ~50,000       |
+| Database Connections | 10-20          | 100+pooled    |
+| Response Time        | 2-5 seconds    | <200ms        |
 
 ## How the Pieces Work Together
 
@@ -204,6 +219,7 @@ kubectl apply -f k8s/
 ## Key Features Explained
 
 ### nginx Load Balancer
+
 - Rate limiting: 100 requests/second per IP
 - Connection limiting: 50 concurrent connections per IP
 - Gzip compression: Reduces bandwidth by 70%
@@ -212,6 +228,7 @@ kubectl apply -f k8s/
 - Health checks: Automatically removes failed backends
 
 ### Kubernetes Auto-Scaling
+
 - Min replicas: 3 (guaranteed capacity)
 - Max replicas: 20 (cost control)
 - CPU target: 70% (scale before overload)
@@ -220,6 +237,7 @@ kubectl apply -f k8s/
 - Scale-down: 10% per minute (cost optimization)
 
 ### Redis Distributed Lock
+
 - Prevents race conditions in seat booking
 - 10-second lock timeout (auto-release if user abandons)
 - Automatic lock release after booking completes
@@ -233,4 +251,3 @@ The system was scaled from 100-200 concurrent users to 50,000+ through four majo
 2. **Caching Layer**: Redis caching for frequently accessed data
 3. **Database Scaling**: PgBouncer and Redis Cluster
 4. **Infrastructure**: nginx, Kubernetes, and HPA
-

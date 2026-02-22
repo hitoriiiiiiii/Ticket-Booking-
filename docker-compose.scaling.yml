@@ -12,14 +12,14 @@ services:
     restart: always
 
     environment:
-      DATABASE_URL: "postgres://ticket:ticket123@postgres_cmd:5432/ticket_cmd_db"
-      POOL_MODE: "transaction"
-      MAX_CLIENT_CONN: "1000"
-      DEFAULT_POOL_SIZE: "100"
-      MIN_POOL_SIZE: "20"
+      DATABASE_URL: 'postgres://ticket:ticket123@postgres_cmd:5432/ticket_cmd_db'
+      POOL_MODE: 'transaction'
+      MAX_CLIENT_CONN: '1000'
+      DEFAULT_POOL_SIZE: '100'
+      MIN_POOL_SIZE: '20'
 
     ports:
-      - "6432:5432"
+      - '6432:5432'
 
     depends_on:
       - postgres_cmd
@@ -33,14 +33,14 @@ services:
     restart: always
 
     environment:
-      DATABASE_URL: "postgres://ticket:ticket123@postgres_query:5432/ticket_query_db"
-      POOL_MODE: "transaction"
-      MAX_CLIENT_CONN: "1000"
-      DEFAULT_POOL_SIZE: "100"
-      MIN_POOL_SIZE: "20"
+      DATABASE_URL: 'postgres://ticket:ticket123@postgres_query:5432/ticket_query_db'
+      POOL_MODE: 'transaction'
+      MAX_CLIENT_CONN: '1000'
+      DEFAULT_POOL_SIZE: '100'
+      MIN_POOL_SIZE: '20'
 
     ports:
-      - "6433:5432"
+      - '6433:5432'
 
     depends_on:
       - postgres_query
@@ -72,7 +72,7 @@ services:
     restart: always
     command: redis-server --cluster-enabled yes --cluster-config-file nodes.conf --cluster-node-timeout 5000 --appendonly yes
     ports:
-      - "7001:6379"
+      - '7001:6379'
     networks:
       - ticket-booking-network
 
@@ -82,7 +82,7 @@ services:
     restart: always
     command: redis-server --cluster-enabled yes --cluster-config-file nodes.conf --cluster-node-timeout 5000 --appendonly yes
     ports:
-      - "7002:6379"
+      - '7002:6379'
     networks:
       - ticket-booking-network
 
@@ -92,7 +92,7 @@ services:
     restart: always
     command: redis-server --cluster-enabled yes --cluster-config-file nodes.conf --cluster-node-timeout 5000 --appendonly yes
     ports:
-      - "7003:6379"
+      - '7003:6379'
     networks:
       - ticket-booking-network
 
@@ -102,7 +102,7 @@ services:
     restart: always
     command: redis-server --cluster-enabled yes --cluster-config-file nodes.conf --cluster-node-timeout 5000 --appendonly yes
     ports:
-      - "7004:6379"
+      - '7004:6379'
     networks:
       - ticket-booking-network
 
@@ -112,7 +112,7 @@ services:
     restart: always
     command: redis-server --cluster-enabled yes --cluster-config-file nodes.conf --cluster-node-timeout 5000 --appendonly yes
     ports:
-      - "7005:6379"
+      - '7005:6379'
     networks:
       - ticket-booking-network
 
@@ -122,6 +122,6 @@ services:
     restart: always
     command: redis-server --cluster-enabled yes --cluster-config-file nodes.conf --cluster-node-timeout 5000 --appendonly yes
     ports:
-      - "7006:6379"
+      - '7006:6379'
     networks:
       - ticket-booking-network

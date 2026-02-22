@@ -3,6 +3,7 @@
 This document provides comprehensive Postman collection for testing all available endpoints in the Ticket Booking API.
 
 ## Base URL
+
 ```
 http://localhost:8080
 ```
@@ -10,9 +11,11 @@ http://localhost:8080
 ## Authentication
 
 ### Login to get JWT Token
+
 **Endpoint:** `POST /users/login`
 
 **Request Body:**
+
 ```
 json
 {
@@ -22,6 +25,7 @@ json
 ```
 
 **Response:**
+
 ```
 json
 {
@@ -30,6 +34,7 @@ json
 ```
 
 **Note:** For protected endpoints, include the JWT token in the Authorization header:
+
 ```
 Authorization: Bearer <your_token>
 ```
@@ -39,9 +44,11 @@ Authorization: Bearer <your_token>
 ## Health Check
 
 ### Check API Health
+
 **Endpoint:** `GET /health`
 
 **Response:**
+
 ```
 json
 {
@@ -54,9 +61,11 @@ json
 ## User Endpoints
 
 ### 1. Register New User
+
 **Endpoint:** `POST /users/register`
 
 **Request Body:**
+
 ```
 json
 {
@@ -68,6 +77,7 @@ json
 ```
 
 **Response (201 Created):**
+
 ```
 json
 {
@@ -82,9 +92,11 @@ json
 ---
 
 ### 2. Login User
+
 **Endpoint:** `POST /users/login`
 
 **Request Body:**
+
 ```
 json
 {
@@ -94,6 +106,7 @@ json
 ```
 
 **Response (200 OK):**
+
 ```
 json
 {
@@ -104,14 +117,17 @@ json
 ---
 
 ### 3. List All Users
+
 **Endpoint:** `GET /users`
 
 **Headers:**
+
 ```
 Authorization: Bearer <admin_token>
 ```
 
 **Response (200 OK):**
+
 ```
 json
 [
@@ -130,9 +146,11 @@ json
 ## Movie Endpoints
 
 ### 4. Get All Movies
+
 **Endpoint:** `GET /movies`
 
 **Response (200 OK):**
+
 ```
 json
 [
@@ -154,11 +172,13 @@ json
 ---
 
 ### 5. Get Single Movie
+
 **Endpoint:** `GET /movies/:id`
 
 **Example:** `GET /movies/1`
 
 **Response (200 OK):**
+
 ```
 json
 {
@@ -170,6 +190,7 @@ json
 ```
 
 **Error Response (404 Not Found):**
+
 ```
 json
 {
@@ -180,14 +201,17 @@ json
 ---
 
 ### 6. Create New Movie
+
 **Endpoint:** `POST /movies`
 
 **Headers:**
+
 ```
 Authorization: Bearer <admin_token>
 ```
 
 **Request Body:**
+
 ```
 json
 {
@@ -198,6 +222,7 @@ json
 ```
 
 **Response (201 Created):**
+
 ```
 json
 {
@@ -213,9 +238,11 @@ json
 ## Show Endpoints
 
 ### 7. Get All Shows
+
 **Endpoint:** `GET /shows`
 
 **Response (200 OK):**
+
 ```
 json
 [
@@ -232,14 +259,17 @@ json
 ---
 
 ### 8. Create New Show
+
 **Endpoint:** `POST /shows`
 
 **Headers:**
+
 ```
 Authorization: Bearer <admin_token>
 ```
 
 **Request Body:**
+
 ```
 json
 {
@@ -252,6 +282,7 @@ json
 **Note:** The `end_time` is automatically calculated based on the movie duration.
 
 **Response (201 Created):**
+
 ```
 json
 {
@@ -268,9 +299,11 @@ json
 ## Booking Endpoints
 
 ### 9. Reserve Ticket
+
 **Endpoint:** `POST /reserve`
 
 **Request Body:**
+
 ```
 json
 {
@@ -280,6 +313,7 @@ json
 ```
 
 **Response (200 OK):**
+
 ```
 json
 {
@@ -288,6 +322,7 @@ json
 ```
 
 **Error Response (409 Conflict):**
+
 ```
 json
 {
@@ -298,9 +333,11 @@ json
 ---
 
 ### 10. Confirm Ticket Booking
+
 **Endpoint:** `POST /confirm`
 
 **Request Body:**
+
 ```
 json
 {
@@ -310,6 +347,7 @@ json
 ```
 
 **Response (200 OK):**
+
 ```
 json
 {
@@ -318,6 +356,7 @@ json
 ```
 
 **Error Response (409 Conflict):**
+
 ```
 json
 {
@@ -328,9 +367,11 @@ json
 ---
 
 ### 11. Cancel Ticket Reservation
+
 **Endpoint:** `POST /cancel`
 
 **Request Body:**
+
 ```
 json
 {
@@ -340,6 +381,7 @@ json
 ```
 
 **Response (200 OK):**
+
 ```
 json
 {
@@ -348,6 +390,7 @@ json
 ```
 
 **Error Response (404 Not Found):**
+
 ```
 json
 {
@@ -358,11 +401,13 @@ json
 ---
 
 ### 12. Check Seat Availability
+
 **Endpoint:** `GET /availability/:seat_id`
 
 **Example:** `GET /availability/A1`
 
 **Response (200 OK):**
+
 ```
 json
 {
@@ -372,6 +417,7 @@ json
 ```
 
 Or if reserved:
+
 ```
 json
 {
@@ -383,14 +429,17 @@ json
 ---
 
 ### 13. Get All Events (Admin)
+
 **Endpoint:** `GET /events`
 
 **Headers:**
+
 ```
 Authorization: Bearer <admin_token>
 ```
 
 **Response (200 OK):**
+
 ```
 json
 [
@@ -408,9 +457,11 @@ json
 ## Payment Endpoints
 
 ### 14. Initiate Payment
+
 **Endpoint:** `POST /payments/initiate`
 
 **Request Body:**
+
 ```
 json
 {
@@ -421,6 +472,7 @@ json
 ```
 
 **Response (200 OK):**
+
 ```
 json
 {
@@ -435,9 +487,11 @@ json
 ---
 
 ### 15. Verify Payment
+
 **Endpoint:** `POST /payments/verify`
 
 **Request Body:**
+
 ```
 json
 {
@@ -449,6 +503,7 @@ json
 **Note:** `mode` can be: `success`, `fail`, or `random`
 
 **Response (200 OK):**
+
 ```
 json
 {
@@ -461,11 +516,13 @@ json
 ## Notification Endpoints
 
 ### 16. Get User Notifications
+
 **Endpoint:** `GET /notifications/:user_id`
 
 **Example:** `GET /notifications/1`
 
 **Response (200 OK):**
+
 ```
 json
 [
@@ -487,73 +544,73 @@ json
 Here's a typical workflow for testing the booking system:
 
 1. **Register a new user**
-   
+
 ```
    POST /users/register
-   
+
 ```
 
 2. **Login to get token**
-   
+
 ```
    POST /users/login
-   
+
 ```
 
 3. **View available movies**
-   
+
 ```
    GET /movies
-   
+
 ```
 
 4. **Create a show**
-   
+
 ```
    POST /shows (with admin token)
-   
+
 ```
 
 5. **Check seat availability**
-   
+
 ```
    GET /availability/A1
-   
+
 ```
 
 6. **Reserve a ticket**
-   
+
 ```
    POST /reserve
-   
+
 ```
 
 7. **Confirm the booking**
-   
+
 ```
    POST /confirm
-   
+
 ```
 
 8. **Initiate payment**
-   
+
 ```
    POST /payments/initiate
-   
+
 ```
 
 9. **Verify payment**
-   
+
 ```
    POST /payments/verify
-   
+
 ```
 
 10. **Check notifications**
-    
+
 ```
     GET /notifications/:user_id
-    
+
 ```
 
 ---
@@ -562,15 +619,15 @@ Here's a typical workflow for testing the booking system:
 
 The API returns standard HTTP status codes:
 
-| Status Code | Description |
-|-------------|-------------|
-| 200 | Success |
-| 201 | Created |
-| 400 | Bad Request |
-| 401 | Unauthorized |
-| 404 | Not Found |
-| 409 | Conflict |
-| 500 | Internal Server Error |
+| Status Code | Description           |
+| ----------- | --------------------- |
+| 200         | Success               |
+| 201         | Created               |
+| 400         | Bad Request           |
+| 401         | Unauthorized          |
+| 404         | Not Found             |
+| 409         | Conflict              |
+| 500         | Internal Server Error |
 
 ---
 
@@ -581,3 +638,4 @@ Make sure to set up your environment variables in Postman:
 ```
 DATABASE_URL=postgres://user:password@localhost:5432/ticket_booking
 PORT=8080
+```

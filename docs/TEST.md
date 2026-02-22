@@ -65,25 +65,30 @@ We follow the **Testing Pyramid** approach:
 ## 2. Testing Types
 
 ### 2.1 Unit Tests
+
 - Test individual functions and methods in isolation
 - Use mocks for external dependencies (DB, Redis, event dispatcher)
 - Focus on business logic and edge cases
 
 ### 2.2 Integration Tests
+
 - Test multiple components working together
 - Use test containers for database and Redis
 - Test actual HTTP endpoints
 
 ### 2.3 Contract Tests
+
 - Verify API contracts between services
 - Ensure backward compatibility
 
 ### 2.4 Performance Tests
+
 - Load testing with k6 or Gatling
 - Concurrent booking stress tests
 - Database connection pool testing
 
 ### 2.5 Security Tests
+
 - Input validation
 - Authentication/Authorization
 - SQL injection prevention
@@ -114,8 +119,6 @@ require (
 
 ### Directory Structure
 
-
-
 ### Naming Conventions
 
 - **Unit Tests**: `*_test.go`
@@ -129,14 +132,14 @@ require (
 
 ### Target Coverage by Layer
 
-| Layer | Minimum Coverage | Target Coverage |
-|-------|------------------|------------------|
-| Command Services | 80% | 90% |
-| Query Services | 75% | 85% |
-| Handlers | 70% | 80% |
-| Middleware | 85% | 95% |
-| Utils | 80% | 90% |
-| Event System | 75% | 85% |
+| Layer            | Minimum Coverage | Target Coverage |
+| ---------------- | ---------------- | --------------- |
+| Command Services | 80%              | 90%             |
+| Query Services   | 75%              | 85%             |
+| Handlers         | 70%              | 80%             |
+| Middleware       | 85%              | 95%             |
+| Utils            | 80%              | 90%             |
+| Event System     | 75%              | 85%             |
 
 ### Critical Paths to Cover
 
@@ -153,20 +156,20 @@ require (
 
 #### Command Service Tests (`user/command_service_test.go`)
 
-| Test Case | Description | Expected Behavior |
-|-----------|-------------|-------------------|
-| `TestRegisterUser_Success` | Valid user registration | User created, no password in response |
-| `TestRegisterUser_DuplicateEmail` | Same email registration | Error: "email already exists" |
-| `TestRegisterUser_InvalidEmail` | Invalid email format | Error: "invalid email format" |
-| `TestRegisterUser_EmptyPassword` | Empty password | Error: "password required" |
-| `TestRegisterUser_ShortPassword` | Password < 8 chars | Error: "password too short" |
+| Test Case                         | Description             | Expected Behavior                     |
+| --------------------------------- | ----------------------- | ------------------------------------- |
+| `TestRegisterUser_Success`        | Valid user registration | User created, no password in response |
+| `TestRegisterUser_DuplicateEmail` | Same email registration | Error: "email already exists"         |
+| `TestRegisterUser_InvalidEmail`   | Invalid email format    | Error: "invalid email format"         |
+| `TestRegisterUser_EmptyPassword`  | Empty password          | Error: "password required"            |
+| `TestRegisterUser_ShortPassword`  | Password < 8 chars      | Error: "password too short"           |
 
 #### Query Service Tests (`user/query_service_test.go`)
 
-| Test Case | Description | Expected Behavior |
-|-----------|-------------|-------------------|
-| `TestGetUserByID_Exists` | Valid user ID | Returns user data |
-| `TestGetUserByID_NotFound` | Non-existent ID | Returns nil |
+| Test Case                  | Description            | Expected Behavior  |
+| -------------------------- | ---------------------- | ------------------ |
+| `TestGetUserByID_Exists`   | Valid user ID          | Returns user data  |
+| `TestGetUserByID_NotFound` | Non-existent ID        | Returns nil        |
 | `TestListUsers_Pagination` | List with limit/offset | Correct pagination |
 
 #### Handler Tests
@@ -188,20 +191,20 @@ func TestRegisterHandler(t *testing.T) {
 
 #### Command Service Tests
 
-| Test Case | Description | Expected Behavior |
-|-----------|-------------|-------------------|
-| `TestCreateMovie_Success` | Valid movie data | Movie created with ID |
-| `TestCreateMovie_InvalidTitle` | Empty title | Error: "title required" |
-| `TestCreateMovie_NegativeDuration` | Duration < 0 | Error: "invalid duration" |
-| `TestCreateMovie_EmitEvent` | Movie creation | EventUserRegistered emitted |
+| Test Case                          | Description      | Expected Behavior           |
+| ---------------------------------- | ---------------- | --------------------------- |
+| `TestCreateMovie_Success`          | Valid movie data | Movie created with ID       |
+| `TestCreateMovie_InvalidTitle`     | Empty title      | Error: "title required"     |
+| `TestCreateMovie_NegativeDuration` | Duration < 0     | Error: "invalid duration"   |
+| `TestCreateMovie_EmitEvent`        | Movie creation   | EventUserRegistered emitted |
 
 #### Query Service Tests
 
-| Test Case | Description | Expected Behavior |
-|-----------|-------------|-------------------|
-| `TestGetMovieByID_Exists` | Valid ID | Returns movie details |
-| `TestGetMovies_List` | List all movies | Returns movie list |
-| `TestGetMovie_NotFound` | Invalid ID | Returns nil |
+| Test Case                 | Description     | Expected Behavior     |
+| ------------------------- | --------------- | --------------------- |
+| `TestGetMovieByID_Exists` | Valid ID        | Returns movie details |
+| `TestGetMovies_List`      | List all movies | Returns movie list    |
+| `TestGetMovie_NotFound`   | Invalid ID      | Returns nil           |
 
 ---
 
@@ -209,12 +212,12 @@ func TestRegisterHandler(t *testing.T) {
 
 #### Command Service Tests
 
-| Test Case | Description | Expected Behavior |
-|-----------|-------------|-------------------|
-| `TestCreateShow_Success` | Valid show data | Show created |
-| `TestCreateShow_Overlap` | Overlapping shows | Error: "showtime conflict" |
-| `TestCreateShow_PastDate` | Past show date | Error: "cannot create show in past" |
-| `TestCreateShow_InvalidMovie` | Non-existent movie | Error: "movie not found" |
+| Test Case                     | Description        | Expected Behavior                   |
+| ----------------------------- | ------------------ | ----------------------------------- |
+| `TestCreateShow_Success`      | Valid show data    | Show created                        |
+| `TestCreateShow_Overlap`      | Overlapping shows  | Error: "showtime conflict"          |
+| `TestCreateShow_PastDate`     | Past show date     | Error: "cannot create show in past" |
+| `TestCreateShow_InvalidMovie` | Non-existent movie | Error: "movie not found"            |
 
 ---
 
@@ -227,17 +230,17 @@ go
 // Test file: booking/command_service_test.go
 ```
 
-| Test Case | Description | Expected Behavior |
-|-----------|-------------|-------------------|
-| `TestReserveTicket_Success` | Valid reservation | Ticket reserved, status=HELD |
-| `TestReserveTicket_AlreadyReserved` | Double booking | Error: "seat already reserved" |
-| `TestReserveTicket_EmitEvent` | Reservation made | EventTicketReserved emitted |
-| `TestReserveTicket_WithLock` | Concurrent booking | Lock acquired, prevent race |
-| `TestConfirmTicket_Success` | Valid confirmation | Status changes to BOOKED |
-| `TestConfirmTicket_NotHeld` | Confirm without reserve | Error: "seat not held" |
-| `TestConfirmTicket_EmitEvent` | Confirmation made | EventTicketConfirmed emitted |
-| `TestCancelTicket_Success` | Valid cancellation | Reservation deleted |
-| `TestCancelTicket_NotFound` | Cancel non-existent | Error: "no reservation found" |
+| Test Case                           | Description             | Expected Behavior              |
+| ----------------------------------- | ----------------------- | ------------------------------ |
+| `TestReserveTicket_Success`         | Valid reservation       | Ticket reserved, status=HELD   |
+| `TestReserveTicket_AlreadyReserved` | Double booking          | Error: "seat already reserved" |
+| `TestReserveTicket_EmitEvent`       | Reservation made        | EventTicketReserved emitted    |
+| `TestReserveTicket_WithLock`        | Concurrent booking      | Lock acquired, prevent race    |
+| `TestConfirmTicket_Success`         | Valid confirmation      | Status changes to BOOKED       |
+| `TestConfirmTicket_NotHeld`         | Confirm without reserve | Error: "seat not held"         |
+| `TestConfirmTicket_EmitEvent`       | Confirmation made       | EventTicketConfirmed emitted   |
+| `TestCancelTicket_Success`          | Valid cancellation      | Reservation deleted            |
+| `TestCancelTicket_NotFound`         | Cancel non-existent     | Error: "no reservation found"  |
 
 #### Distributed Lock Tests
 
@@ -256,20 +259,20 @@ func TestDistributedLock_ConcurrentBooking(t *testing.T) {
 
 #### Command Service Tests
 
-| Test Case | Description | Expected Behavior |
-|-----------|-------------|-------------------|
-| `TestInitiatePayment_Success` | Valid payment | Payment record created |
-| `TestInitiatePayment_InvalidAmount` | Amount <= 0 | Error: "invalid amount" |
-| `TestVerifyPayment_Success` | Valid verification | Payment status = VERIFIED |
-| `TestVerifyPayment_AlreadyVerified` | Double verify | Error: "already verified" |
-| `TestVerifyPayment_EmitEvent` | Payment verified | EventPaymentVerified emitted |
+| Test Case                           | Description        | Expected Behavior            |
+| ----------------------------------- | ------------------ | ---------------------------- |
+| `TestInitiatePayment_Success`       | Valid payment      | Payment record created       |
+| `TestInitiatePayment_InvalidAmount` | Amount <= 0        | Error: "invalid amount"      |
+| `TestVerifyPayment_Success`         | Valid verification | Payment status = VERIFIED    |
+| `TestVerifyPayment_AlreadyVerified` | Double verify      | Error: "already verified"    |
+| `TestVerifyPayment_EmitEvent`       | Payment verified   | EventPaymentVerified emitted |
 
 #### Query Service Tests
 
-| Test Case | Description | Expected Behavior |
-|-----------|-------------|-------------------|
-| `TestGetPaymentByID` | Valid payment ID | Returns payment details |
-| `TestGetUserPayments` | User payment history | Returns payment list |
+| Test Case             | Description          | Expected Behavior       |
+| --------------------- | -------------------- | ----------------------- |
+| `TestGetPaymentByID`  | Valid payment ID     | Returns payment details |
+| `TestGetUserPayments` | User payment history | Returns payment list    |
 
 ---
 
@@ -277,10 +280,10 @@ func TestDistributedLock_ConcurrentBooking(t *testing.T) {
 
 #### Query Service Tests
 
-| Test Case | Description | Expected Behavior |
-|-----------|-------------|-------------------|
-| `TestGetUserNotifications` | Get user notifications | Returns notification list |
-| `TestGetNotifications_Unread` | Filter unread only | Returns unread count |
+| Test Case                     | Description            | Expected Behavior         |
+| ----------------------------- | ---------------------- | ------------------------- |
+| `TestGetUserNotifications`    | Get user notifications | Returns notification list |
+| `TestGetNotifications_Unread` | Filter unread only     | Returns unread count      |
 
 #### Worker Tests
 
@@ -299,21 +302,21 @@ func TestNotificationWorker_ProcessJob(t *testing.T) {
 
 #### Rate Limiter Tests (`middleware/rate_limiter_test.go`)
 
-| Test Case | Description | Expected Behavior |
-|-----------|-------------|-------------------|
-| `TestRateLimit_UnderLimit` | Normal requests | All succeed (200) |
-| `TestRateLimit_OverLimit` | Excessive requests | Some return 429 |
-| `TestRateLimit_Reset` | After window reset | Requests succeed again |
-| `TestRateLimit_Distributed` | Multiple instances | Shared counter |
+| Test Case                   | Description        | Expected Behavior      |
+| --------------------------- | ------------------ | ---------------------- |
+| `TestRateLimit_UnderLimit`  | Normal requests    | All succeed (200)      |
+| `TestRateLimit_OverLimit`   | Excessive requests | Some return 429        |
+| `TestRateLimit_Reset`       | After window reset | Requests succeed again |
+| `TestRateLimit_Distributed` | Multiple instances | Shared counter         |
 
 #### Auth Middleware Tests
 
-| Test Case | Description | Expected Behavior |
-|-----------|-------------|-------------------|
-| `TestAuth_ValidToken` | Valid JWT | Request proceeds |
-| `TestAuth_ExpiredToken` | Expired JWT | Error: 401 |
-| `TestAuth_MissingToken` | No token | Error: 401 |
-| `TestAuth_InvalidToken` | Malformed token | Error: 401 |
+| Test Case               | Description     | Expected Behavior |
+| ----------------------- | --------------- | ----------------- |
+| `TestAuth_ValidToken`   | Valid JWT       | Request proceeds  |
+| `TestAuth_ExpiredToken` | Expired JWT     | Error: 401        |
+| `TestAuth_MissingToken` | No token        | Error: 401        |
+| `TestAuth_InvalidToken` | Malformed token | Error: 401        |
 
 ---
 
@@ -321,18 +324,18 @@ func TestNotificationWorker_ProcessJob(t *testing.T) {
 
 #### Dispatcher Tests (`events/dispatcher_test.go`)
 
-| Test Case | Description | Expected Behavior |
-|-----------|-------------|-------------------|
-| `TestPublish_Success` | Valid event | Event stored and published |
-| `TestPublish_Async` | Async publish | Non-blocking publish |
-| `TestSubscribe_Called` | Subscriber receives event | Callback invoked |
-| `TestSubscribe_Multiple` | Multiple subscribers | All callbacks invoked |
+| Test Case                | Description               | Expected Behavior          |
+| ------------------------ | ------------------------- | -------------------------- |
+| `TestPublish_Success`    | Valid event               | Event stored and published |
+| `TestPublish_Async`      | Async publish             | Non-blocking publish       |
+| `TestSubscribe_Called`   | Subscriber receives event | Callback invoked           |
+| `TestSubscribe_Multiple` | Multiple subscribers      | All callbacks invoked      |
 
 #### Store Tests
 
-| Test Case | Description | Expected Behavior |
-|-----------|-------------|-------------------|
-| `TestEventStore_Save` | Save event | Event persisted |
+| Test Case                       | Description          | Expected Behavior  |
+| ------------------------------- | -------------------- | ------------------ |
+| `TestEventStore_Save`           | Save event           | Event persisted    |
 | `TestEventStore_GetByAggregate` | Get aggregate events | Returns event list |
 
 ---
@@ -341,20 +344,20 @@ func TestNotificationWorker_ProcessJob(t *testing.T) {
 
 #### Distributed Lock Tests (`utils/lock_test.go`)
 
-| Test Case | Description | Expected Behavior |
-|-----------|-------------|-------------------|
-| `TestLock_Acquire` | Lock acquisition | Lock acquired |
-| `TestLock_Release` | Lock release | Lock released |
-| `TestLock_Timeout` | Lock timeout | Returns error after timeout |
-| `TestLock_Reacquire` | Reacquire after release | Success |
+| Test Case            | Description             | Expected Behavior           |
+| -------------------- | ----------------------- | --------------------------- |
+| `TestLock_Acquire`   | Lock acquisition        | Lock acquired               |
+| `TestLock_Release`   | Lock release            | Lock released               |
+| `TestLock_Timeout`   | Lock timeout            | Returns error after timeout |
+| `TestLock_Reacquire` | Reacquire after release | Success                     |
 
 #### Cache Tests (`utils/cache_test.go`)
 
-| Test Case | Description | Expected Behavior |
-|-----------|-------------|-------------------|
-| `TestCache_SetGet` | Basic set/get | Correct value returned |
-| `TestCache_Expiration` | TTL expiration | Value expires |
-| `TestCache_Delete` | Delete key | Key removed |
+| Test Case              | Description    | Expected Behavior      |
+| ---------------------- | -------------- | ---------------------- |
+| `TestCache_SetGet`     | Basic set/get  | Correct value returned |
+| `TestCache_Expiration` | TTL expiration | Value expires          |
+| `TestCache_Delete`     | Delete key     | Key removed            |
 
 ---
 
@@ -442,11 +445,11 @@ func TestE2E_BookingFlow(t *testing.T) {
 
 ### Load Test Scenarios
 
-| Scenario | Users | Duration | Target |
-|----------|-------|----------|--------|
-| Normal Load | 1000 | 5 min | < 200ms p95 |
-| Peak Load | 10000 | 2 min | < 500ms p95 |
-| Stress Test | 50000 | 1 min | No errors |
+| Scenario    | Users | Duration | Target      |
+| ----------- | ----- | -------- | ----------- |
+| Normal Load | 1000  | 5 min    | < 200ms p95 |
+| Peak Load   | 10000 | 2 min    | < 500ms p95 |
+| Stress Test | 50000 | 1 min    | No errors   |
 
 ### Specific Load Tests
 
@@ -547,24 +550,24 @@ on: [push, pull_request]
 jobs:
   test:
     runs-on: ubuntu-latest
-    
+
     steps:
       - uses: actions/checkout@v4
-      
+
       - name: Set up Go
         uses: actions/setup-go@v5
         with:
           go-version: '1.25'
-          
+
       - name: Run Unit Tests
         run: go test ./internal/... -tags=unit -race -coverprofile=coverage.out
-        
+
       - name: Run Integration Tests
         run: go test ./internal/... -tags=integration
-        
+
       - name: Upload Coverage
         uses: codecov/codecov-action@v4
-        
+
       - name: Run Security Tests
         run: go run golang.org/x/vuln/cmd/govulncheck ./...
 ```
@@ -594,5 +597,4 @@ Before each release, verify:
 
 ---
 
-*Document Version: 1.0*  
-
+_Document Version: 1.0_
