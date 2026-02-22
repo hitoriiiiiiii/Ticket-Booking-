@@ -22,6 +22,9 @@ func NewDistributedLock(redisClient *redis.Client) *DistributedLock {
 // Returns true if lock was acquired, false if not
 // The lock will automatically expire after ttlSeconds
 func (dl *DistributedLock) AcquireLock(ctx context.Context, key string, ttlSeconds int) (bool, error) {
+	if dl.redisClient == nil {
+		return false, fmt.Errorf("redis client is nil")
+	}
 	// Use SET NX with expiration for atomic lock acquisition
 	result, err := dl.redisClient.SetNX(ctx, key, "locked", time.Duration(ttlSeconds)*time.Second).Result()
 	if err != nil {
@@ -32,6 +35,9 @@ func (dl *DistributedLock) AcquireLock(ctx context.Context, key string, ttlSecon
 
 // ReleaseLock releases a lock with the given key
 func (dl *DistributedLock) ReleaseLock(ctx context.Context, key string) error {
+	if dl.redisClient == nil {
+		return fmt.Errorf("redis client is nil")
+	}
 	_, err := dl.redisClient.Del(ctx, key).Result()
 	if err != nil {
 		return fmt.Errorf("failed to release lock: %w", err)

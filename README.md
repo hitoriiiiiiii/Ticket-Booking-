@@ -765,6 +765,45 @@ Optimized for fast queries:
 
 ## 🧪 Testing
 
+### Unit Tests
+
+The project includes comprehensive unit tests following the testing strategy outlined in [TEST.md](./docs/TEST.md).
+
+```
+bash
+# Run all unit tests
+go test ./internal/... -v
+
+# Run with coverage
+go test ./internal/... -coverprofile=coverage.out -covermode=atomic
+
+# Run specific package
+go test ./internal/booking/... -v
+```
+
+### Test Coverage
+
+| Package | Tests | Status |
+|---------|-------|--------|
+| booking | 5 test cases | ✅ PASS |
+| user | 4 test cases | ✅ PASS |
+| movie | 4 test cases | ✅ PASS |
+| show | 5 test cases | ✅ PASS |
+| payments | 7 test cases | ✅ PASS |
+| notification | 3 test cases | ✅ PASS |
+| events | 5 test cases | ✅ PASS |
+| middleware | 7 test cases | ✅ PASS |
+| queue | 4 test cases | ✅ PASS |
+| db | 2 test cases (skipped - integration) | ✅ PASS |
+| utils | 4 test cases | ✅ PASS |
+
+### Test Types
+
+- **Model Tests**: Testing struct definitions and field values
+- **Validation Tests**: Testing input validation logic
+- **Constructor Tests**: Testing factory functions
+- **Edge Case Tests**: Testing boundary conditions
+
 ### Using Postman
 
 1. Import `docs/postman-collection.json` into Postman
