@@ -1,10 +1,9 @@
-// Command service for user write operations (CQRS)
-
 package user
 
 import (
 	"context"
 	"errors"
+	"fmt"
 	"time"
 
 	"github.com/hitorii/ticket-booking/internal/events"
@@ -64,13 +63,14 @@ func (s *CommandService) Register(ctx context.Context, req RegisterRequest) (*Us
 
 	// Emit event for event-driven flow
 	if s.Dispatcher != nil {
+		userIDStr := fmt.Sprintf("%d", user.ID)
 		payload := events.EventPayload{
-			UserID:   user.ID,
+			UserID:   userIDStr,
 			Username: req.Username,
 			Email:    req.Email,
 			IsAdmin:  req.IsAdmin,
 		}
-		_ = s.Dispatcher.Publish(ctx, events.EventUserRegistered, user.ID, payload)
+		_ = s.Dispatcher.Publish(ctx, events.EventUserRegistered, userIDStr, payload)
 	}
 
 	return user, nil

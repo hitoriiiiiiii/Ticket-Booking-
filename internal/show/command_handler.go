@@ -75,6 +75,7 @@ type CreateShowRequest struct {
 
 // UpdateShowRequest - Request model for updating a show
 type UpdateShowRequest struct {
+	MovieID   int       `json:"movie_id"`
 	Theater   string    `json:"theater"`
 	StartTime time.Time `json:"start_time"`
 	EndTime   time.Time `json:"end_time"`

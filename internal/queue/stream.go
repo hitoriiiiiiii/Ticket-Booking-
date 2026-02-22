@@ -10,17 +10,6 @@ import (
 	"github.com/redis/go-redis/v9"
 )
 
-// JobPayload represents a job that can be serialized to Redis
-// This is a generic job structure to avoid import cycles
-type JobPayload struct {
-	Type      string                 `json:"type"`
-	UserID    string                 `json:"user_id"`
-	Message   string                 `json:"message"`
-	Data      map[string]interface{} `json:"data"`
-	Priority  int                    `json:"priority"`
-	CreatedAt time.Time              `json:"created_at"`
-}
-
 // ProduceJob adds a job to the Redis stream
 func ProduceJob(ctx context.Context, job JobPayload) error {
 	if RedisClient == nil {

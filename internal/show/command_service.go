@@ -1,10 +1,9 @@
-// Command service for show write operations (CQRS)
-
 package show
 
 import (
 	"context"
 	"errors"
+	"fmt"
 	"time"
 
 	"github.com/hitorii/ticket-booking/internal/events"
@@ -45,13 +44,15 @@ func (s *CommandService) CreateShow(ctx context.Context, req CreateShowRequest) 
 
 	// Emit event for event-driven flow
 	if s.Dispatcher != nil {
+		showIDStr := fmt.Sprintf("%d", show.ID)
+		movieIDStr := fmt.Sprintf("%d", req.MovieID)
 		payload := events.EventPayload{
-			ShowID:    show.ID,
-			MovieID:   req.MovieID,
+			ShowID:    showIDStr,
+			MovieID:   movieIDStr,
 			StartTime: req.StartTime.Format(time.RFC3339),
 			EndTime:   endTime.Format(time.RFC3339),
 		}
-		_ = s.Dispatcher.Publish(ctx, events.EventShowCreated, show.ID, payload)
+		_ = s.Dispatcher.Publish(ctx, events.EventShowCreated, showIDStr, payload)
 	}
 
 	return show, nil
@@ -66,9 +67,10 @@ func (s *CommandService) UpdateShow(ctx context.Context, id string, req UpdateSh
 
 	// Emit event for event-driven flow
 	if s.Dispatcher != nil {
+		movieIDStr := fmt.Sprintf("%d", req.MovieID)
 		payload := events.EventPayload{
 			ShowID:  id,
-			MovieID: req.MovieID,
+			MovieID: movieIDStr,
 		}
 		_ = s.Dispatcher.Publish(ctx, events.EventShowUpdated, id, payload)
 	}

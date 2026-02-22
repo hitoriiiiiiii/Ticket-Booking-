@@ -54,9 +54,20 @@ func (h *QueryHandler) GetUserReservations(c *gin.Context) {
 		return
 	}
 
-	if reservations == nil {
-		reservations = []gin.H{}
+	// Convert reservations to gin.H format
+	result := make([]gin.H, len(reservations))
+	for i, r := range reservations {
+		result[i] = gin.H{
+			"id":     r.ID,
+			"user_id": r.UserID,
+			"seat_id": r.SeatID,
+			"status":  r.Status,
+		}
 	}
 
-	c.JSON(http.StatusOK, reservations)
+	if result == nil {
+		result = []gin.H{}
+	}
+
+	c.JSON(http.StatusOK, result)
 }

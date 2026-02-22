@@ -1,10 +1,9 @@
-// Command service for movie write operations (CQRS)
-
 package movie
 
 import (
 	"context"
 	"errors"
+	"fmt"
 
 	"github.com/hitorii/ticket-booking/internal/events"
 )
@@ -56,11 +55,12 @@ func (s *CommandService) CreateMovie(ctx context.Context, req CreateMovieRequest
 
 	// Emit event for event-driven flow
 	if s.Dispatcher != nil {
+		movieIDStr := fmt.Sprintf("%d", movie.ID)
 		payload := events.EventPayload{
-			MovieID: movie.ID,
+			MovieID: movieIDStr,
 			Name:    req.Name,
 		}
-		_ = s.Dispatcher.Publish(ctx, events.EventMovieCreated, movie.ID, payload)
+		_ = s.Dispatcher.Publish(ctx, events.EventMovieCreated, movieIDStr, payload)
 	}
 
 	return movie, nil
