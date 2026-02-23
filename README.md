@@ -515,9 +515,8 @@ PORT=8080
 
 # Kafka
 KAFKA_BROKER=localhost:9092
-```
-
----
+ 
+````
 
 ## 🐳 Docker Compose
 
