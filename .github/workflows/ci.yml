@@ -1,4 +1,4 @@
-name: CI/CD Pipeline
+name: CI Pipeline
 
 on:
   push:
@@ -41,7 +41,7 @@ jobs:
         flags: unittests
         name: ticket-booking
         fail_ci_if_error: false
-    
+
   lint:
     name: Lint
     runs-on: ubuntu-latest
@@ -59,7 +59,7 @@ jobs:
       uses: golangci/golangci-lint-action@v6
       with:
         version: latest
-    
+
   build:
     name: Build
     runs-on: ubuntu-latest
