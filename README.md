@@ -509,12 +509,7 @@ go run cmd/worker/main.go
 
 Create a `.env` file in the root directory:
 
-```
-env
-# Database
-DB_USER=ticket
-DB_PASSWORD=ticket123
-
+````
 # Server
 PORT=8080
 
@@ -574,6 +569,28 @@ docker exec -it ticket-cmd-db psql -U ticket -d ticket_cmd_db
 
 # Connect to Query Database
 docker exec -it ticket-query-db psql -U ticket -d ticket_query_db
+```
+
+### Database Connection Details
+
+| Database       | Host          | Port | Database Name     | Username | Password   |
+| ---------------|---------------|------|------------------|----------|------------|
+| Command DB     | localhost     | 5433 | ticket_cmd_db    | ticket   | ticket123  |
+| Query DB       | localhost     | 5434 | ticket_query_db  | ticket   | ticket123  |
+| Redis          | localhost     | 6379 | -                | -        | -          |
+
+### Environment Variables
+
+```
+bash
+# Command Database (Write)
+export COMMAND_DATABASE_URL="postgres://ticket:ticket123@localhost:5433/ticket_cmd_db?sslmode=disable"
+
+# Query Database (Read)
+export QUERY_DATABASE_URL="postgres://ticket:ticket123@localhost:5434/ticket_query_db?sslmode=disable"
+
+# Redis
+export REDIS_URL="redis://localhost:6379"
 ```
 
 ---
@@ -731,6 +748,7 @@ http://localhost:8081
 ├── docs/
 │   ├── POSTMAN.md
 │   ├── SCALING.md
+│   ├── TEST.md
 │   ├── postman-collection.json
 │   └── README.md
 └── postgres-data/
@@ -770,7 +788,9 @@ Optimized for fast queries:
 
 ## 🧪 Testing
 
-### Unit Tests
+### Test Commands
+
+Run all tests using the following commands:
 
 The project includes comprehensive unit tests following the testing strategy outlined in [TEST.md](./docs/TEST.md).
 
@@ -782,32 +802,46 @@ go test ./internal/... -v
 # Run with coverage
 go test ./internal/... -coverprofile=coverage.out -covermode=atomic
 
-# Run specific package
+# Run specific package tests
 go test ./internal/booking/... -v
+go test ./internal/user/... -v
+go test ./internal/payments/... -v
+go test ./internal/movie/... -v
+go test ./internal/show/... -v
+go test ./internal/notification/... -v
+go test ./internal/events/... -v
+go test ./internal/middleware/... -v
+go test ./internal/queue/... -v
+go test ./internal/utils/... -v
+
+# Run integration tests (requires Docker)
+go test ./internal/test/integration/... -v
+
+# Skip integration tests (for CI/CD)
+go test ./internal/... -short -v
 ```
+
+### Test Types
+
+- **Unit Tests**: Located in each package (e.g., `booking_test.go`, `user_test.go`)
+- **Integration Tests**: Located in `internal/test/integration/`
+- **Model Tests**: Testing struct definitions and field values
+- **Validation Tests**: Testing input validation logic
 
 ### Test Coverage
 
 | Package      | Tests                                | Status  |
 | ------------ | ------------------------------------ | ------- |
-| booking      | 5 test cases                         | ✅ PASS |
-| user         | 4 test cases                         | ✅ PASS |
-| movie        | 4 test cases                         | ✅ PASS |
-| show         | 5 test cases                         | ✅ PASS |
-| payments     | 7 test cases                         | ✅ PASS |
-| notification | 3 test cases                         | ✅ PASS |
-| events       | 5 test cases                         | ✅ PASS |
-| middleware   | 7 test cases                         | ✅ PASS |
-| queue        | 4 test cases                         | ✅ PASS |
-| db           | 2 test cases (skipped - integration) | ✅ PASS |
-| utils        | 4 test cases                         | ✅ PASS |
-
-### Test Types
-
-- **Model Tests**: Testing struct definitions and field values
-- **Validation Tests**: Testing input validation logic
-- **Constructor Tests**: Testing factory functions
-- **Edge Case Tests**: Testing boundary conditions
+| booking      | 5+ test cases                        | ✅ PASS |
+| user         | 4+ test cases                        | ✅ PASS |
+| movie        | 4+ test cases                        | ✅ PASS |
+| show         | 5+ test cases                        | ✅ PASS |
+| payments     | 7+ test cases                        | ✅ PASS |
+| notification | 3+ test cases                        | ✅ PASS |
+| events       | 5+ test cases                        | ✅ PASS |
+| middleware   | 7+ test cases                        | ✅ PASS |
+| queue        | 4+ test cases                        | ✅ PASS |
+| utils        | 4+ test cases                        | ✅ PASS |
 
 ### Using Postman
 

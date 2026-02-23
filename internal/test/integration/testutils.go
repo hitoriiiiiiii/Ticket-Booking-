@@ -11,7 +11,12 @@ import (
 
 	"github.com/hitorii/ticket-booking/internal/booking"
 	"github.com/hitorii/ticket-booking/internal/events"
+	"github.com/hitorii/ticket-booking/internal/movie"
+	"github.com/hitorii/ticket-booking/internal/notification"
+	"github.com/hitorii/ticket-booking/internal/payments"
 	"github.com/hitorii/ticket-booking/internal/queue"
+	"github.com/hitorii/ticket-booking/internal/show"
+	"github.com/hitorii/ticket-booking/internal/user"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/redis/go-redis/v9"
 	"github.com/testcontainers/testcontainers-go"
@@ -37,12 +42,22 @@ type TestRedisConfig struct {
 
 // TestServices holds all service instances for integration tests
 type TestServices struct {
-	CommandDB      *TestDatabaseConfig
-	QueryDB        *TestDatabaseConfig
-	Redis          *TestRedisConfig
-	Dispatcher     *events.Dispatcher
-	BookingCmdSvc  *booking.CommandService
-	BookingQuerySvc *booking.QueryService
+	CommandDB             *TestDatabaseConfig
+	QueryDB               *TestDatabaseConfig
+	Redis                 *TestRedisConfig
+	Dispatcher            *events.Dispatcher
+	BookingCmdSvc         *booking.CommandService
+	BookingQuerySvc       *booking.QueryService
+	UserCmdSvc            *user.CommandService
+	UserQuerySvc          *user.QueryService
+	PaymentCmdSvc         *payments.CommandService
+	PaymentQuerySvc       *payments.QueryService
+	NotificationCmdSvc    *notification.CommandService
+	NotificationQuerySvc  *notification.QueryService
+	MovieCmdSvc           *movie.CommandService
+	MovieQuerySvc         *movie.QueryService
+	ShowCmdSvc            *show.CommandService
+	ShowQuerySvc          *show.QueryService
 }
 
 // isDockerError checks if the error is related to Docker not being available
@@ -68,7 +83,6 @@ func isDockerError(err string) bool {
 func SetupTestDatabase(t *testing.T) (cfg *TestDatabaseConfig) {
 	ctx := context.Background()
 
-	// Skip if running in short mode
 	if testing.Short() {
 		t.Skip("Skipping integration test in short mode")
 	}
@@ -80,14 +94,12 @@ func SetupTestDatabase(t *testing.T) (cfg *TestDatabaseConfig) {
 		postgres.WithPassword("ticket123"),
 	)
 	if err != nil {
-		// Check if it's a Docker-related error
 		if isDockerError(err.Error()) {
 			t.Skip("Docker is not available or not properly configured, skipping integration test")
 		}
 		t.Fatalf("Failed to start PostgreSQL container: %v", err)
 	}
 
-	// Get host and port
 	host, err := container.Host(ctx)
 	if err != nil {
 		t.Fatalf("Failed to get container host: %v", err)
@@ -105,7 +117,6 @@ func SetupTestDatabase(t *testing.T) (cfg *TestDatabaseConfig) {
 		t.Fatalf("Failed to create connection pool: %v", err)
 	}
 
-	// Run migrations
 	if err := runMigrations(ctx, pool); err != nil {
 		t.Fatalf("Failed to run migrations: %v", err)
 	}
@@ -151,7 +162,6 @@ func SetupTestRedis(t *testing.T) (cfg *TestRedisConfig) {
 
 	client := redis.NewClient(opts)
 
-	// Wait for Redis to be ready
 	ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
 	defer cancel()
 	for {
@@ -174,18 +184,14 @@ func SetupTestRedis(t *testing.T) (cfg *TestRedisConfig) {
 func SetupTestServices(t *testing.T) *TestServices {
 	ctx := context.Background()
 
-	// Setup databases
 	cmdDB := SetupTestDatabase(t)
 	queryDB := SetupTestDatabase(t)
 
-	// Update query DB name - create a new pool with different database
 	queryDB.DSN = fmt.Sprintf("postgres://ticket:ticket123@%s:%d/ticket_query_db?sslmode=disable",
 		queryDB.Host, queryDB.Port)
 
-	// Create the query database
 	_, err := cmdDB.Pool.Exec(ctx, "CREATE DATABASE ticket_query_db")
 	if err != nil {
-		// Database might already exist, ignore error
 		t.Logf("Note: Query database might already exist: %v", err)
 	}
 
@@ -195,28 +201,55 @@ func SetupTestServices(t *testing.T) *TestServices {
 	}
 	queryDB.Pool = queryQ
 
-	// Run migrations on query DB
 	if err := runMigrations(ctx, queryDB.Pool); err != nil {
 		t.Logf("Warning: Failed to run migrations on query DB: %v", err)
 	}
 
-	// Setup Redis
 	redisCfg := SetupTestRedis(t)
 
-	// Create event dispatcher
 	dispatcher := events.NewDispatcher(redisCfg.Client, nil)
 
-	// Create booking services
 	bookingCmdSvc := booking.NewCommandServiceWithDispatcher(cmdDB.Pool, dispatcher)
 	bookingQuerySvc := booking.NewQueryService(queryDB.Pool)
 
+	userCmdSvc := user.NewCommandServiceWithDispatcher(cmdDB.Pool, dispatcher)
+	userQuerySvc := user.NewQueryService(queryDB.Pool)
+
+	// Initialize Payment service
+	paymentRepo := payments.NewRepository(cmdDB.Pool)
+	paymentCmdSvc := payments.NewCommandServiceWithDispatcher(paymentRepo, dispatcher)
+	paymentQuerySvc := payments.NewQueryService(cmdDB.Pool)
+
+// Initialize Notification services
+	notificationRepo := notification.NewRepository(cmdDB.Pool)
+	notificationCmdSvc := notification.NewCommandService(notificationRepo)
+	notificationQuerySvc := notification.NewQueryService(cmdDB.Pool)
+
+	// Initialize Movie services
+	movieCmdSvc := movie.NewCommandServiceWithDispatcher(dispatcher)
+	movieQuerySvc := movie.NewQueryService(cmdDB.Pool)
+
+	// Initialize Show services
+	showCmdSvc := show.NewCommandServiceWithDispatcher(dispatcher)
+	showQuerySvc := show.NewQueryService(cmdDB.Pool)
+
 	return &TestServices{
-		CommandDB:      cmdDB,
-		QueryDB:        queryDB,
-		Redis:          redisCfg,
-		Dispatcher:     dispatcher,
-		BookingCmdSvc:  bookingCmdSvc,
-		BookingQuerySvc: bookingQuerySvc,
+		CommandDB:             cmdDB,
+		QueryDB:               queryDB,
+		Redis:                 redisCfg,
+		Dispatcher:            dispatcher,
+		BookingCmdSvc:         bookingCmdSvc,
+		BookingQuerySvc:       bookingQuerySvc,
+		UserCmdSvc:            userCmdSvc,
+		UserQuerySvc:          userQuerySvc,
+		PaymentCmdSvc:         paymentCmdSvc,
+		PaymentQuerySvc:       paymentQuerySvc,
+		NotificationCmdSvc:    notificationCmdSvc,
+		NotificationQuerySvc:  notificationQuerySvc,
+		MovieCmdSvc:           movieCmdSvc,
+		MovieQuerySvc:         movieQuerySvc,
+		ShowCmdSvc:            showCmdSvc,
+		ShowQuerySvc:          showQuerySvc,
 	}
 }
 
@@ -263,7 +296,6 @@ func TeardownTestServices(t *testing.T, svc *TestServices) {
 
 // runMigrations executes database migrations for testing
 func runMigrations(ctx context.Context, pool *pgxpool.Pool) error {
-	// Create reservations table
 	_, err := pool.Exec(ctx, `
 		CREATE TABLE IF NOT EXISTS reservations (
 			seat_id TEXT PRIMARY KEY,
@@ -276,7 +308,6 @@ func runMigrations(ctx context.Context, pool *pgxpool.Pool) error {
 		return fmt.Errorf("failed to create reservations table: %w", err)
 	}
 
-	// Create events table
 	_, err = pool.Exec(ctx, `
 		CREATE TABLE IF NOT EXISTS events (
 			id SERIAL PRIMARY KEY,
@@ -290,7 +321,6 @@ func runMigrations(ctx context.Context, pool *pgxpool.Pool) error {
 		return fmt.Errorf("failed to create events table: %w", err)
 	}
 
-	// Create users table
 	_, err = pool.Exec(ctx, `
 		CREATE TABLE IF NOT EXISTS users (
 			id SERIAL PRIMARY KEY,
@@ -303,6 +333,37 @@ func runMigrations(ctx context.Context, pool *pgxpool.Pool) error {
 	`)
 	if err != nil {
 		return fmt.Errorf("failed to create users table: %w", err)
+	}
+
+	// Payments table
+	_, err = pool.Exec(ctx, `
+		CREATE TABLE IF NOT EXISTS payments (
+			id TEXT PRIMARY KEY,
+			booking_id TEXT NOT NULL,
+			user_id TEXT NOT NULL,
+			amount INTEGER NOT NULL,
+			status TEXT NOT NULL,
+			transaction_id TEXT,
+			created_at TIMESTAMP DEFAULT NOW()
+		)
+	`)
+	if err != nil {
+		return fmt.Errorf("failed to create payments table: %w", err)
+	}
+
+	// Notifications table
+	_, err = pool.Exec(ctx, `
+		CREATE TABLE IF NOT EXISTS notifications (
+			id TEXT PRIMARY KEY,
+			user_id TEXT NOT NULL,
+			message TEXT NOT NULL,
+			type TEXT NOT NULL,
+			is_read BOOLEAN DEFAULT FALSE,
+			created_at TIMESTAMP DEFAULT NOW()
+		)
+	`)
+	if err != nil {
+		return fmt.Errorf("failed to create notifications table: %w", err)
 	}
 
 	return nil
@@ -318,7 +379,6 @@ func SetupTestEnvironment() {
 
 // ClearRedisQueue clears all Redis queues for a clean test state
 func ClearRedisQueue(ctx context.Context, rdb *redis.Client) error {
-	// Clear job queue
 	keys, err := rdb.Keys(ctx, "queue:*").Result()
 	if err != nil {
 		return err
@@ -329,7 +389,6 @@ func ClearRedisQueue(ctx context.Context, rdb *redis.Client) error {
 		}
 	}
 
-	// Clear event stream
 	if err := rdb.Del(ctx, events.EventStreamName).Err(); err != nil {
 		return err
 	}
@@ -338,7 +397,6 @@ func ClearRedisQueue(ctx context.Context, rdb *redis.Client) error {
 }
 
 // SetupIntegrationTest is a helper to run integration tests
-// It handles setup and teardown automatically
 func SetupIntegrationTest(t *testing.T) *TestServices {
 	svc := SetupTestServices(t)
 	if svc == nil {
@@ -366,7 +424,6 @@ func CreateTestFixtures(svc *TestServices) (*TestFixture, error) {
 		SeatID: "seat-test-1",
 	}
 
-	// Clean up any existing test data
 	_, _ = svc.CommandDB.Pool.Exec(ctx, "DELETE FROM reservations WHERE seat_id=$1 OR user_id=$1", fixture.SeatID)
 	_, _ = svc.CommandDB.Pool.Exec(ctx, "DELETE FROM reservations WHERE user_id=$1", fixture.UserID)
 

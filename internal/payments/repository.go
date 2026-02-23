@@ -92,3 +92,36 @@ func (r *Repository) UpdateStatus(paymentID, status, txnID string) error {
 
 	return err
 }
+
+// GetPaymentByBookingID retrieves a payment by booking ID
+func (r *Repository) GetPaymentByBookingID(bookingID string) (*Payment, error) {
+	query := `
+		SELECT id, booking_id, user_id, amount, status, transaction_id, created_at
+		FROM payments
+		WHERE booking_id = $1
+	`
+
+	row := r.DB.QueryRow(
+		context.Background(),
+		query,
+		bookingID,
+	)
+
+	var payment Payment
+
+	err := row.Scan(
+		&payment.ID,
+		&payment.BookingID,
+		&payment.UserID,
+		&payment.Amount,
+		&payment.Status,
+		&payment.TransactionID,
+		&payment.CreatedAt,
+	)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return &payment, nil
+}

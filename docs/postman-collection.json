@@ -1,0 +1,362 @@
+{
+  "info": {
+    "name": "Ticket Booking API",
+    "description": "API collection for the Ticket Booking System",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8081",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "Health Check",
+      "item": [
+        {
+          "name": "Check API Health",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/health",
+              "host": ["{{baseUrl}}"],
+              "path": ["health"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Users",
+      "item": [
+        {
+          "name": "Register User",
+          "request": {
+            "method": "POST",
+            "url": {
+              "raw": "{{baseUrl}}/cmd/users/register",
+              "host": ["{{baseUrl}}"],
+              "path": ["cmd", "users", "register"]
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"johndoe\",\n  \"email\": \"johndoe@example.com\",\n  \"password\": \"securepassword123\",\n  \"is_admin\": false\n}"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Login User",
+          "request": {
+            "method": "POST",
+            "url": {
+              "raw": "{{baseUrl}}/cmd/users/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["cmd", "users", "login"]
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"johndoe@example.com\",\n  \"password\": \"securepassword123\"\n}"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "List Users",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/query/users",
+              "host": ["{{baseUrl}}"],
+              "path": ["query", "users"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Movies",
+      "item": [
+        {
+          "name": "Get All Movies",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/query/movies",
+              "host": ["{{baseUrl}}"],
+              "path": ["query", "movies"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Movie by ID",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/query/movies/1",
+              "host": ["{{baseUrl}}"],
+              "path": ["query", "movies", "1"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Create Movie",
+          "request": {
+            "method": "POST",
+            "url": {
+              "raw": "{{baseUrl}}/cmd/movies",
+              "host": ["{{baseUrl}}"],
+              "path": ["cmd", "movies"]
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Inception\",\n  \"genre\": \"Sci-Fi\",\n  \"duration\": 148\n}"
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Shows",
+      "item": [
+        {
+          "name": "Get All Shows",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/query/shows",
+              "host": ["{{baseUrl}}"],
+              "path": ["query", "shows"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Create Show",
+          "request": {
+            "method": "POST",
+            "url": {
+              "raw": "{{baseUrl}}/cmd/shows",
+              "host": ["{{baseUrl}}"],
+              "path": ["cmd", "shows"]
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"movie_id\": 1,\n  \"theater\": \"Theater A\",\n  \"start_time\": \"2024-01-20T14:00:00Z\"\n}"
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Booking",
+      "item": [
+        {
+          "name": "Reserve Ticket",
+          "request": {
+            "method": "POST",
+            "url": {
+              "raw": "{{baseUrl}}/cmd/reserve",
+              "host": ["{{baseUrl}}"],
+              "path": ["cmd", "reserve"]
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"user_id\": \"1\",\n  \"seat_id\": \"A1\"\n}"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Confirm Ticket",
+          "request": {
+            "method": "POST",
+            "url": {
+              "raw": "{{baseUrl}}/cmd/confirm",
+              "host": ["{{baseUrl}}"],
+              "path": ["cmd", "confirm"]
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"user_id\": \"1\",\n  \"seat_id\": \"A1\"\n}"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Cancel Reservation",
+          "request": {
+            "method": "POST",
+            "url": {
+              "raw": "{{baseUrl}}/cmd/cancel",
+              "host": ["{{baseUrl}}"],
+              "path": ["cmd", "cancel"]
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"user_id\": \"1\",\n  \"seat_id\": \"A1\"\n}"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Check Seat Availability",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/query/availability/A1",
+              "host": ["{{baseUrl}}"],
+              "path": ["query", "availability", "A1"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get User Reservations",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/query/reservations/1",
+              "host": ["{{baseUrl}}"],
+              "path": ["query", "reservations", "1"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Payments",
+      "item": [
+        {
+          "name": "Initiate Payment",
+          "request": {
+            "method": "POST",
+            "url": {
+              "raw": "{{baseUrl}}/cmd/payments/initiate",
+              "host": ["{{baseUrl}}"],
+              "path": ["cmd", "payments", "initiate"]
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"booking_id\": \"1\",\n  \"user_id\": \"1\",\n  \"amount\": 500\n}"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Verify Payment",
+          "request": {
+            "method": "POST",
+            "url": {
+              "raw": "{{baseUrl}}/cmd/payments/verify",
+              "host": ["{{baseUrl}}"],
+              "path": ["cmd", "payments", "verify"]
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"payment_id\": \"pay_123abc\",\n  \"mode\": \"success\"\n}"
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Notifications",
+      "item": [
+        {
+          "name": "Get User Notifications",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/query/notifications/1",
+              "host": ["{{baseUrl}}"],
+              "path": ["query", "notifications", "1"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Events",
+      "item": [
+        {
+          "name": "Get All Events",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/query/events",
+              "host": ["{{baseUrl}}"],
+              "path": ["query", "events"]
+            }
+          },
+          "response": []
+        }
+      ]
+    }
+  ]
+}
