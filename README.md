@@ -223,7 +223,7 @@ A high-performance backend for ticket booking applications, inspired by platform
 │ ┌─────────┐        ┌─────────┐        ┌─────────┐           │
 │ │ Lock    │        │ Lock    │        │ Lock    │           │
 │ │ Seat 5  │        │ Seat 5  │        │ Seat 6  │           │
-│ │ (10 min)│        │ (FAIL!) │        │ (OK!)   │           │
+│ │ (10 sec)│        │ (FAIL!) │        │ (OK!)   │           │
 │ └─────────┘        └─────────┘        └─────────┘           │
 │     │                                      │                │
 │     ▼                                      ▼                │
@@ -235,7 +235,7 @@ A high-performance backend for ticket booking applications, inspired by platform
 └─────────────────────────────────────────────────────────────┘
 ```
 
-- **Seat Locking**: Prevents double booking with configurable timeout (10 minutes)
+- **Seat Locking**: Prevents double booking with configurable timeout (10 seconds)
 - **Optimistic Locking**: Version-based conflict detection
 - **Pessimistic Locking**: Database-level row locking
 - **Go Concurrency**: Goroutines & Mutex Locks for thread-safe operations
@@ -270,7 +270,7 @@ A high-performance backend for ticket booking applications, inspired by platform
 > **Redis** for real-time seat availability and temporary locks
 
 - **Real-time seat availability**
-- **Temporary seat locks** (TTL: 10 minutes)
+- **Temporary seat locks** (TTL: 10 seconds)
 - **Session management**
 - **Rate limiting** (5000 requests/minute)
 - **Job Queue**: Redis-based job queue for background processing
