@@ -1,26 +1,26 @@
-# 🎬 Ticket-Booking System
+# Ticket-Booking System
 
 A high-performance backend for ticket booking applications, inspired by platforms like BookMyShow. Designed to handle 50K+ concurrent users with robust concurrency control and scalability.
 
 ---
 
-## 📋 Table of Contents
+## Table of Contents
 
-- [Features](#-features)
-- [Architecture](#-architecture)
-- [Technology Stack](#-technology-stack)
-- [Getting Started](#-getting-started)
-- [Docker Compose](#-docker-compose)
-- [API Endpoints](#-api-endpoints)
-- [Project Structure](#-project-structure)
-- [Database Schema](#-database-schema)
-- [Testing](#-testing)
-- [Scaling](#-scaling)
-- [License](#-license)
+- [Features](#features)
+- [Architecture](#architecture)
+- [Technology Stack](#technology-stack)
+- [Getting Started](#getting-started)
+- [Docker Compose](#docker-compose)
+- [API Endpoints](#api-endpoints)
+- [Project Structure](#project-structure)
+- [Database Schema](#database-schema)
+- [Testing](#testing)
+- [Scaling](#scaling)
+- [License](#license)
 
 ---
 
-## ✨ Features
+## Features
 
 - Users browse movies
 - Select theater + showtime
@@ -46,9 +46,9 @@ A high-performance backend for ticket booking applications, inspired by platform
 
 ---
 
-## 🚀 System Design Technologies
+## System Design Technologies
 
-### 🏗 Backend Architecture
+### Backend Architecture
 
 | Technology               | Description                                                           |
 | ------------------------ | --------------------------------------------------------------------- |
@@ -58,7 +58,7 @@ A high-performance backend for ticket booking applications, inspired by platform
 
 ---
 
-### 🔀 CQRS Pattern
+### CQRS Pattern
 
 > **Command Query Responsibility Segregation**
 
@@ -199,7 +199,7 @@ A high-performance backend for ticket booking applications, inspired by platform
 
 ---
 
-### 🗄 Database & Storage
+### Database & Storage
 
 | Feature               | Implementation                                                       |
 | --------------------- | -------------------------------------------------------------------- |
@@ -210,7 +210,7 @@ A high-performance backend for ticket booking applications, inspired by platform
 
 ---
 
-### 🔒 Concurrency & Seat Locking
+### Concurrency & Seat Locking
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
@@ -243,7 +243,7 @@ A high-performance backend for ticket booking applications, inspired by platform
 
 ---
 
-### ⚡ Caching Layer
+### Caching Layer
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
@@ -278,7 +278,7 @@ A high-performance backend for ticket booking applications, inspired by platform
 
 ---
 
-### 📩 Job Queues & Background Processing
+### Job Queues & Background Processing
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
@@ -319,7 +319,7 @@ A high-performance backend for ticket booking applications, inspired by platform
 
 ---
 
-### 📡 Event-Driven System Design
+### Event-Driven System Design
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
@@ -359,7 +359,7 @@ A high-performance backend for ticket booking applications, inspired by platform
 
 ---
 
-### 🔐 Authentication & Security
+### Authentication & Security
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
@@ -401,7 +401,7 @@ A high-performance backend for ticket booking applications, inspired by platform
 
 ---
 
-### 📊 Scalability Concepts
+### Scalability Concepts
 
 ```
                     ┌─────────────────────────────────────┐
@@ -434,7 +434,7 @@ A high-performance backend for ticket booking applications, inspired by platform
 
 ---
 
-### 🐳 DevOps & Deployment
+### DevOps & Deployment
 
 | Tool               | Purpose                                        |
 | ------------------ | ---------------------------------------------- |
@@ -445,18 +445,18 @@ A high-performance backend for ticket booking applications, inspired by platform
 
 ---
 
-### 📈 Monitoring & Logging
+### Monitoring & Logging
 
 | Feature                  | Status          |
 | ------------------------ | --------------- |
 | **Structured Logging**   | ✅ Implemented  |
 | **Request Logging**      | ✅ Implemented  |
 | **Error Tracing**        | ✅ Implemented  |
-| **Prometheus + Grafana** | 🔜 Future Scope |
+| **Prometheus + Grafana** | Future Scope |
 
 ---
 
-### 🧪 Testing & Reliability
+### Testing & Reliability
 
 | Type                    | Description              |
 | ----------------------- | ------------------------ |
@@ -466,7 +466,7 @@ A high-performance backend for ticket booking applications, inspired by platform
 
 ---
 
-## 🛠 Technology Stack
+## Technology Stack
 
 | Category       | Technology    |
 | -------------- | ------------- |
@@ -482,7 +482,7 @@ A high-performance backend for ticket booking applications, inspired by platform
 
 ---
 
-## 🚀 Getting Started
+## Getting Started
 
 ### Prerequisites
 
@@ -518,7 +518,7 @@ KAFKA_BROKER=localhost:9092
  
 ````
 
-## 🐳 Docker Compose
+## Docker Compose
 
 ### Services Overview
 
@@ -594,7 +594,7 @@ export REDIS_URL="redis://localhost:6379"
 
 ---
 
-## 📡 API Endpoints
+## API Endpoints
 
 > **For complete API documentation with request/response examples, refer to [Postman Documentation](./docs/POSTMAN.md)**
 
@@ -638,7 +638,7 @@ http://localhost:8081
 
 ---
 
-## 📁 Project Structure
+## Project Structure
 
 ```
 .
@@ -755,7 +755,7 @@ http://localhost:8081
 
 ---
 
-## 🗄 Database Schema
+## Database Schema
 
 ### Command Database (Write)
 
@@ -785,7 +785,7 @@ Optimized for fast queries:
 
 ---
 
-## 🧪 Testing
+## Testing
 
 ### Test Commands
 
@@ -891,7 +891,7 @@ GET /query/notifications/1
 
 ---
 
-## 📈 Scaling
+## Scaling
 
 The system supports horizontal scaling with:
 
@@ -905,14 +905,16 @@ For detailed scaling documentation, see [SCALING.md](./docs/SCALING.md).
 
 ---
 
-## 📄 License
+## License
 
 MIT License - Feel free to use this project for learning and development.
 
 ---
 
+---
+
 <div align="center">
 
-**Built with ❤️ using Go + PostgreSQL + Redis**
+**Built with Go + PostgreSQL + Redis**
 
 </div>

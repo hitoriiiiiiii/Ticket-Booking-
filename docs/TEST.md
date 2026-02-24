@@ -359,7 +359,7 @@ func TestNotificationWorker_ProcessJob(t *testing.T) {
 | `TestCache_Expiration` | TTL expiration | Value expires          |
 | `TestCache_Delete`     | Delete key     | Key removed            |
 
----
+
 
 ## 7. Integration Testing
 
@@ -410,18 +410,207 @@ var (
 
 ## 8. End-to-End Testing
 
+End-to-End (E2E) tests validate the complete workflow of the ticket booking system by testing the integration of all components from the API layer to the database and external services. The E2E tests are located in `internal/test/e2e/`.
+
 ### Test Scenarios
 
-1. **Happy Path**: User registers → Searches movie → Reserves seat → Confirms → Pays
-2. **Cancellation**: User reserves → Cancels → Seat available
+1. **Happy Path**: User registers -> Searches movie -> Reserves seat -> Confirms -> Pays
+2. **Cancellation**: User reserves -> Cancels -> Seat available
 3. **Concurrent Booking**: Multiple users try to book same seat
 4. **Payment Failure**: Payment verification fails
+5. **Multi-User Scenario**: Multiple users booking different seats simultaneously
+
+### E2E Test Suite
+
+The E2E test suite covers the following test categories:
+
+#### 8.1 Complete Booking Flow Tests
+
+| Test Function | Description | Test Steps |
+|---------------|-------------|------------|
+| `TestE2E_CompleteBookingFlow` | Full booking workflow from reservation to payment verification | Create Movie -> Create Show -> Reserve Ticket -> Confirm Ticket -> Initiate Payment -> Verify Payment -> Get User Reservations |
+
+#### 8.2 User Management Tests
+
+| Test Function | Description | Test Steps |
+|---------------|-------------|------------|
+| `TestE2E_UserRegistration` | User registration and validation | Register Valid User -> Register Duplicate Email (rejected) -> Register Invalid Email (rejected) |
+
+#### 8.3 Booking Tests
+
+| Test Function | Description | Test Steps |
+|---------------|-------------|------------|
+| `TestE2E_BookingReserve` | Ticket reservation scenarios | Reserve Available Seat -> Reserve Same Seat Twice (prevented) -> Reserve With Invalid User (rejected) |
+| `TestE2E_BookingConfirm` | Ticket confirmation scenarios | Confirm Reserved Ticket -> Confirm Without Reservation (rejected) |
+| `TestE2E_BookingCancel` | Ticket cancellation scenarios | Cancel Reserved Ticket -> Cancel Non-Existent Ticket (404) |
+
+#### 8.4 Payment Tests
+
+| Test Function | Description | Test Steps |
+|---------------|-------------|------------|
+| `TestE2E_PaymentFlow` | Payment initiation and verification | Initiate Payment -> Verify Payment Success -> Verify Payment Failure |
+
+#### 8.5 Query Tests
+
+| Test Function | Description | Test Steps |
+|---------------|-------------|------------|
+| `TestE2E_QueryEndpoints` | Query endpoint functionality | Get User Reservations -> Check Availability -> Get Movies -> Get Shows -> Get Notifications |
+
+#### 8.6 Error Handling Tests
+
+| Test Function | Description | Test Steps |
+|---------------|-------------|------------|
+| `TestE2E_ErrorHandling` | Error scenarios | Invalid JSON -> Missing Required Fields -> Non-Existent Endpoints |
+
+#### 8.7 Concurrent Booking Tests
+
+| Test Function | Description | Test Steps |
+|---------------|-------------|------------|
+| `TestE2E_ConcurrentBooking` | Race condition prevention | Multiple users (10) try to reserve the same seat simultaneously; only 1 should succeed |
+| `TestE2E_MultiUserScenario` | Multi-user booking | 5 users each try to book 5 different seats (25 total bookings) |
+
+#### 8.8 Performance Tests
+
+| Test Function | Description | Test Steps |
+|---------------|-------------|------------|
+| `TestE2E_PerformanceBaseline` | Performance baseline | 100 concurrent health check requests to measure throughput |
+
+#### 8.9 Health Check Tests
+
+| Test Function | Description | Test Steps |
+|---------------|-------------|------------|
+| `TestE2E_HealthCheck` | API health endpoint | Verify API is healthy and responding |
+
+### E2E Test Helper Functions
+
+The E2E test suite provides helper functions in `internal/test/e2e/helpers.go`:
+
+#### Client Setup
+
+```
+go
+// SetupE2ETest sets up an E2E test with a configured client
+func SetupE2ETest(t *testing.T) *E2EClient
+
+// NewE2EClient creates a new E2E test client
+func NewE2EClient(baseURL string) *E2EClient
+```
+
+#### Booking API Helpers
+
+```
+go
+// ReserveTicket reserves a ticket for a user
+func ReserveTicket(client *E2EClient, userID, seatID string) (map[string]interface{}, error)
+
+// ConfirmTicket confirms a reserved ticket
+func ConfirmTicket(client *E2EClient, userID, seatID string) (map[string]interface{}, error)
+
+// CancelTicket cancels a reserved ticket
+func CancelTicket(client *E2EClient, userID, seatID string) (map[string]interface{}, error)
+
+// CheckAvailability checks seat availability
+func CheckAvailability(client *E2EClient, seatID string) (map[string]interface{}, error)
+
+// GetUserReservations gets reservations for a user
+func GetUserReservations(client *E2EClient, userID string) (map[string]interface{}, error)
+```
+
+#### User API Helpers
+
+```
+go
+// CreateTestUser creates a test user
+func CreateTestUser(client *E2EClient, user TestUser) (map[string]interface{}, error)
+
+// ListUsers lists all users
+func ListUsers(client *E2EClient) (map[string]interface{}, error)
+```
+
+#### Movie & Show API Helpers
+
+```
+go
+// CreateMovie creates a new movie
+func CreateMovie(client *E2EClient, title string, duration int) (map[string]interface{}, error)
+
+// GetMovies gets all movies
+func GetMovies(client *E2EClient) (map[string]interface{}, error)
+
+// GetMovie gets a specific movie
+func GetMovie(client *E2EClient, movieID string) (map[string]interface{}, error)
+
+// CreateShow creates a new show
+func CreateShow(client *E2EClient, movieID, showTime string) (map[string]interface{}, error)
+
+// GetShows gets all shows
+func GetShows(client *E2EClient) (map[string]interface{}, error)
+```
+
+#### Payment API Helpers
+
+```
+go
+// InitiatePayment initiates a payment for a booking
+func InitiatePayment(client *E2EClient, bookingID, userID string, amount int) (map[string]interface{}, error)
+
+// VerifyPayment verifies a payment
+func VerifyPayment(client *E2EClient, paymentID, mode string) (map[string]interface{}, error)
+```
+
+#### Notification API Helpers
+
+```
+go
+// GetUserNotifications gets notifications for a user
+func GetUserNotifications(client *E2EClient, userID string) (map[string]interface{}, error)
+```
+
+#### Utility Functions
+
+```
+go
+// GenerateUniqueID generates a unique ID for test data
+func GenerateUniqueID(prefix string) string
+
+// CheckHealth checks if the API is healthy
+func CheckHealth(client *E2EClient) (map[string]interface{}, error)
+
+// AssertResponseSuccess asserts that a response indicates success
+func AssertResponseSuccess(t *testing.T, resp map[string]interface{}, expectedStatus int)
+
+// CleanupTestData cleans up test data
+func CleanupTestData(client *E2EClient, seatIDs []string, userIDs []string)
+
+// WaitForCondition waits for a condition to be true
+func WaitForCondition(condition func() bool, timeout time.Duration) bool
+```
+
+### Running E2E Tests
+
+```
+bash
+# Run all E2E tests
+go test ./internal/test/e2e/... -v
+
+# Run specific E2E test
+go test ./internal/test/e2e/... -v -run TestE2E_CompleteBookingFlow
+
+# Run E2E tests with short mode (skip long-running tests)
+go test ./internal/test/e2e/... -v -short
+
+# Run with custom API base URL
+export API_BASE_URL=http://localhost:8081
+go test ./internal/test/e2e/... -v
+```
 
 ### E2E Test Example
 
 ```
 go
 func TestE2E_BookingFlow(t *testing.T) {
+    client := SetupE2ETest(t)
+    
     // Register user
     // Login and get token
     // Get available shows
@@ -432,6 +621,15 @@ func TestE2E_BookingFlow(t *testing.T) {
     // Get notification
 }
 ```
+
+### Prerequisites for E2E Tests
+
+Before running E2E tests, ensure:
+1. All services are running (API, databases, Redis, Kafka)
+2. The API is accessible on the configured port (default: localhost:8080)
+3. Health endpoint is responding
+
+The test suite automatically waits for the API to be healthy before running tests.
 
 ---
 
