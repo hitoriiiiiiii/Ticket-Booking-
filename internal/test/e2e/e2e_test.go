@@ -156,6 +156,8 @@ func TestE2E_UserRegistration(t *testing.T) {
 		resp1, err1 := CreateTestUser(client, user1)
 		if err1 != nil {
 			t.Logf("First registration error (may already exist): %v", err1)
+		} else {
+			_ = resp1 // explicitly ignore unused response
 		}
 
 		// Second registration with same email should fail

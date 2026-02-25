@@ -30,8 +30,8 @@ jobs:
       uses: docker/metadata-action@v5
       with:
         images: |
-          ghcr.io/${{ github.repository }}/ticket-booking-api
-          ghcr.io/${{ github.repository }}/ticket-booking-worker
+          ghcr.io/${{ github.repository_owner }}/ticket-booking-api
+          ghcr.io/${{ github.repository_owner }}/ticket-booking-worker
         tags: |
           type=ref,event=branch
           type=ref,event=pr
@@ -55,7 +55,9 @@ jobs:
         context: .
         file: docker/DockerFile.worker
         push: ${{ github.event_name != 'pull_request' }}
-        tags: ${{ steps.meta.outputs.tags }}-worker
+        tags: |
+          ghcr.io/${{ github.repository_owner }}/ticket-booking-worker:${{ github.sha }}
+          ghcr.io/${{ github.repository_owner }}/ticket-booking-worker:main
         labels: ${{ steps.meta.outputs.labels }}
         cache-from: type=gha
         cache-to: type=gha,mode=max
