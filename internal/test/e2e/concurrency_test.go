@@ -213,21 +213,21 @@ func TestRateLimiting_Sustained(t *testing.T) {
 			if time.Since(start) >= duration {
 				break
 			}
-			go func() {
-				resp, err := client.Get("/health")
-				if err != nil {
-					atomic.AddInt32(&errorCount, 1)
-					return
-				}
-				if resp.StatusCode == 429 {
-					atomic.AddInt32(&rateLimitedCount, 1)
-				} else if resp.StatusCode == 200 {
-					atomic.AddInt32(&successCount, 1)
-				} else {
-					atomic.AddInt32(&errorCount, 1)
-				}
-				resp.Body.Close()
-			}()
+		go func() {
+			resp, err := client.Get("/health")
+			if err != nil {
+				atomic.AddInt32(&errorCount, 1)
+				return
+			}
+			statusCode := GetValueAsInt(resp, "status_code")
+			if statusCode == 429 {
+				atomic.AddInt32(&rateLimitedCount, 1)
+			} else if statusCode == 200 {
+				atomic.AddInt32(&successCount, 1)
+			} else {
+				atomic.AddInt32(&errorCount, 1)
+			}
+		}()
 			time.Sleep(10 * time.Millisecond) // 100 req/sec
 		}
 	}()

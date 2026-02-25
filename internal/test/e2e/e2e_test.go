@@ -373,7 +373,7 @@ func TestE2E_PaymentFlow(t *testing.T) {
 		userID := GenerateUniqueID("user-verify")
 
 		// Initiate payment first
-		resp1, err1 := InitiatePayment(client, bookingID, userID, 1000)
+		_, err1 := InitiatePayment(client, bookingID, userID, 1000)
 		require.NoError(t, err1)
 		
 		// Verify with success mode
@@ -389,7 +389,7 @@ func TestE2E_PaymentFlow(t *testing.T) {
 		userID := GenerateUniqueID("user-fail")
 
 		// Initiate payment first
-		resp1, err1 := InitiatePayment(client, bookingID, userID, 1000)
+		_, err1 := InitiatePayment(client, bookingID, userID, 1000)
 		require.NoError(t, err1)
 
 		// Verify with failure mode
