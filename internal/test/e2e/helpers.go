@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"os"
 	"strings"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -274,10 +275,9 @@ func CheckHealth(client *E2EClient) (map[string]interface{}, error) {
 func TestRateLimiter(t *testing.T, client *E2EClient, numRequests int) RateLimitResult {
 	t.Helper()
 
-	result := RateLimitResult{
-		TotalRequests: numRequests,
-		EndTime:       time.Now().Add(1 * time.Second),
-	}
+	var successCount int32
+	var rateLimitedCount int32
+	var errorCount int32
 
 	// Use a channel to limit concurrency
 	sem := make(chan struct{}, 50)
@@ -289,16 +289,16 @@ func TestRateLimiter(t *testing.T, client *E2EClient, numRequests int) RateLimit
 
 			resp, err := client.Get("/health")
 			if err != nil {
-				result.ErrorCount++
+				atomic.AddInt32(&errorCount, 1)
 				return
 			}
 
 			if GetValueAsInt(resp, "status_code") == 429 {
-				result.RateLimitedCount++
+				atomic.AddInt32(&rateLimitedCount, 1)
 			} else if GetValueAsInt(resp, "status_code") == 200 {
-				result.SuccessCount++
+				atomic.AddInt32(&successCount, 1)
 			} else {
-				result.ErrorCount++
+				atomic.AddInt32(&errorCount, 1)
 			}
 		}()
 	}
@@ -306,7 +306,13 @@ func TestRateLimiter(t *testing.T, client *E2EClient, numRequests int) RateLimit
 	// Wait for all requests to complete
 	time.Sleep(2 * time.Second)
 
-	return result
+	return RateLimitResult{
+		TotalRequests:    numRequests,
+		SuccessCount:     int(successCount),
+		RateLimitedCount: int(rateLimitedCount),
+		ErrorCount:       int(errorCount),
+		EndTime:          time.Now(),
+	}
 }
 
 // Test Data Cleanup
@@ -342,6 +348,11 @@ func WaitForCondition(condition func() bool, timeout time.Duration) bool {
 // SetupE2ETest sets up an E2E test with a configured client
 func SetupE2ETest(t *testing.T) *E2EClient {
 	t.Helper()
+
+	// Skip E2E tests in short mode (CI)
+	if testing.Short() {
+		t.Skip("Skipping E2E tests in short mode")
+	}
 
 	client := NewE2EClient("")
 
@@ -391,4 +402,3 @@ func ParseErrorMessage(resp map[string]interface{}) string {
 func ContainsString(s, substr string) bool {
 	return strings.Contains(s, substr)
 }
-

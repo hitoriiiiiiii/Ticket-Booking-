@@ -8,6 +8,7 @@ import (
 	"github.com/hitorii/ticket-booking/internal/booking"
 	"github.com/hitorii/ticket-booking/internal/config"
 	"github.com/hitorii/ticket-booking/internal/db"
+	"github.com/hitorii/ticket-booking/internal/events"
 	"github.com/hitorii/ticket-booking/internal/notification"
 	"github.com/hitorii/ticket-booking/internal/queue"
 )
@@ -19,8 +20,8 @@ func main() {
 	_ = os.Getenv("COMMAND_DATABASE_URL")
 
 	// Connect to databases
-	cmdDB := db.Connect(os.Getenv("COMMAND_DATABASE_URL"))
-	queryDB := db.Connect(os.Getenv("QUERY_DATABASE_URL"))
+	cmdDB := db.ConnectCommandDB(os.Getenv("COMMAND_DATABASE_URL"))
+	queryDB := db.ConnectQueryDB(os.Getenv("QUERY_DATABASE_URL"))
 	defer cmdDB.Close()
 	defer queryDB.Close()
 
@@ -42,7 +43,7 @@ func main() {
 	// Start projection worker
 	projection := &booking.ReservationProjection{
 		DB:         queryDB,
-		EventStore: &booking.EventStore{DB: cmdDB},
+		EventStore: &events.Store{DB: cmdDB},
 	}
 
 	log.Println("📊 Starting projection worker...")

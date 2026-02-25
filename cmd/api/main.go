@@ -31,8 +31,8 @@ func main() {
 	// Apply rate limiter - allow 5000 requests per minute for 50K users scaling
 	r.Use(middleware.RateLimit(5000))
 	cfg := config.Load()
-	cmdDB := db.Connect(os.Getenv("COMMAND_DATABASE_URL"))
-	queryDB := db.Connect(os.Getenv("QUERY_DATABASE_URL"))
+	cmdDB := db.ConnectCommandDB(os.Getenv("COMMAND_DATABASE_URL"))
+	queryDB := db.ConnectQueryDB(os.Getenv("QUERY_DATABASE_URL"))
 
 	log.Println("ðŸ”Œ Connecting to Redis for job queue...")
 	if err := queue.InitRedis(cfg.RedisURL); err != nil {
@@ -75,8 +75,6 @@ func main() {
 	paymentRepo := payments.NewRepository(cmdDB)
 	paymentCmdService := payments.NewCommandServiceWithDispatcher(paymentRepo, eventDispatcher)
 	paymentCommandHandler := payments.NewCommandHandler(paymentCmdService)
-	paymentQueryService := payments.NewQueryService(queryDB)
-	paymentQueryHandler := payments.NewQueryHandler(paymentQueryService)
 
 	notificationQueryService := notification.NewQueryService(queryDB)
 	notificationQueryHandler := notification.NewQueryHandler(notificationQueryService)
@@ -103,7 +101,9 @@ func main() {
 	r.GET("/query/shows", showQueryHandler.GetShows)
 	r.GET("/query/notifications/:user_id", notificationQueryHandler.GetUserNotifications)
 
-	r.GET("/health", booking.HealthCheck)
+	r.GET("/health", func(c *gin.Context) {
+		c.JSON(200, gin.H{"status": "healthy"})
+	})
 
 	projection := &booking.ReservationProjection{
 		DB:         queryDB,
