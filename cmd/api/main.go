@@ -54,11 +54,14 @@ func main() {
 	// Use distributed locking for high concurrency (50K users support)
 	bookingCommandService := booking.NewCommandServiceWithLock(cmdDB, eventDispatcher, queue.RedisClient)
 	bookingCommandHandler := booking.NewCommandHandler(bookingCommandService, eventStore)
-	bookingQueryService := booking.NewQueryService(queryDB)
+	// Pass both CommandDB and QueryDB to booking query service
+	// CommandDB needed for events, QueryDB for reservations
+	bookingQueryService := booking.NewQueryService(queryDB, cmdDB)
 	bookingQueryHandler := booking.NewQueryHandler(bookingQueryService)
 
 	userCmdService := user.NewCommandServiceWithDispatcher(cmdDB, eventDispatcher)
-	userQueryService := user.NewQueryService(queryDB)
+	// Pass CommandDB to query service for user data (CQRS pattern - users stored in CommandDB)
+	userQueryService := user.NewQueryService(queryDB, cmdDB)
 	userCommandHandler := user.NewCommandHandler(userCmdService)
 	userQueryHandler := user.NewQueryHandler(userQueryService)
 
@@ -76,7 +79,8 @@ func main() {
 	paymentCmdService := payments.NewCommandServiceWithDispatcher(paymentRepo, eventDispatcher)
 	paymentCommandHandler := payments.NewCommandHandler(paymentCmdService)
 
-	notificationQueryService := notification.NewQueryService(queryDB)
+	// Pass CommandDB to notification query service for user notifications
+	notificationQueryService := notification.NewQueryService(queryDB, cmdDB)
 	notificationQueryHandler := notification.NewQueryHandler(notificationQueryService)
 
 	if eventDispatcher != nil {

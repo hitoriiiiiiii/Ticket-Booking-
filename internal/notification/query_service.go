@@ -9,14 +9,15 @@ import (
 )
 
 type QueryService struct {
-	DB *pgxpool.Pool
+	QueryDB *pgxpool.Pool
+	CmdDB   *pgxpool.Pool
 }
 
-func NewQueryService(db *pgxpool.Pool) *QueryService {
-	return &QueryService{DB: db}
+func NewQueryService(queryDB, cmdDB *pgxpool.Pool) *QueryService {
+	return &QueryService{QueryDB: queryDB, CmdDB: cmdDB}
 }
 
-// GetUserNotifications - Query to get all notifications for a user
+// GetUserNotifications - Query to get all notifications for a user (from CommandDB)
 func (s *QueryService) GetUserNotifications(ctx context.Context, userID string) ([]Notification, error) {
 	query := `
 		SELECT id, user_id, message, type, is_read, created_at
@@ -25,7 +26,7 @@ func (s *QueryService) GetUserNotifications(ctx context.Context, userID string) 
 		ORDER BY created_at DESC
 	`
 
-	rows, err := s.DB.Query(ctx, query, userID)
+	rows, err := s.CmdDB.Query(ctx, query, userID)
 	if err != nil {
 		return nil, err
 	}
@@ -52,7 +53,7 @@ func (s *QueryService) GetUserNotifications(ctx context.Context, userID string) 
 	return list, nil
 }
 
-// GetUnreadNotifications - Query to get unread notifications for a user
+// GetUnreadNotifications - Query to get unread notifications for a user (from CommandDB)
 func (s *QueryService) GetUnreadNotifications(ctx context.Context, userID string) ([]Notification, error) {
 	query := `
 		SELECT id, user_id, message, type, is_read, created_at
@@ -61,7 +62,7 @@ func (s *QueryService) GetUnreadNotifications(ctx context.Context, userID string
 		ORDER BY created_at DESC
 	`
 
-	rows, err := s.DB.Query(ctx, query, userID)
+	rows, err := s.CmdDB.Query(ctx, query, userID)
 	if err != nil {
 		return nil, err
 	}
@@ -88,10 +89,10 @@ func (s *QueryService) GetUnreadNotifications(ctx context.Context, userID string
 	return list, nil
 }
 
-// GetNotificationByID - Query to get a notification by ID
+// GetNotificationByID - Query to get a notification by ID (from CommandDB)
 func (s *QueryService) GetNotificationByID(ctx context.Context, id string) (*Notification, error) {
 	var n Notification
-	err := s.DB.QueryRow(ctx, `
+	err := s.CmdDB.QueryRow(ctx, `
 		SELECT id, user_id, message, type, is_read, created_at
 		FROM notifications WHERE id = $1
 	`, id).Scan(&n.ID, &n.UserID, &n.Message, &n.Type, &n.IsRead, &n.CreatedAt)

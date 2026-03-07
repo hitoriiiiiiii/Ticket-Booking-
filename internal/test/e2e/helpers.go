@@ -61,12 +61,24 @@ func getBaseURL() string {
 	if url := os.Getenv("API_BASE_URL"); url != "" {
 		return url
 	}
-	return "http://localhost:8080"
+	// Default to localhost for host machine testing
+	// Use ticket-booking-api:8081 when running inside Docker network
+	return "http://localhost:8081"
 }
 
-// GenerateUniqueID generates a unique ID for test data
+// GenerateUniqueID generates a proper UUID for test data
 func GenerateUniqueID(prefix string) string {
-	return fmt.Sprintf("%s-%s-%d", prefix, uuid.New().String()[:8], time.Now().UnixNano())
+	return uuid.New().String()
+}
+
+// GenerateUserID generates a proper UUID for user IDs
+func GenerateUserID() string {
+	return uuid.New().String()
+}
+
+// GenerateSeatID generates a proper UUID for seat IDs
+func GenerateSeatID() string {
+	return uuid.New().String()
 }
 
 // GetValueAsString extracts a string value from a map
@@ -100,14 +112,14 @@ func (c *E2EClient) makeRequest(method, endpoint string, body interface{}) (map[
 	if body != nil {
 		jsonBody, err := json.Marshal(body)
 		if err != nil {
-			return nil, err
+			return map[string]interface{}{"error": err.Error(), "status_code": 0}, err
 		}
 		reqBody = bytes.NewBuffer(jsonBody)
 	}
 
 	req, err := http.NewRequest(method, c.BaseURL+endpoint, reqBody)
 	if err != nil {
-		return nil, err
+		return map[string]interface{}{"error": err.Error(), "status_code": 0}, err
 	}
 
 	req.Header.Set("Content-Type", "application/json")
@@ -117,24 +129,30 @@ func (c *E2EClient) makeRequest(method, endpoint string, body interface{}) (map[
 
 	resp, err := c.HTTPClient.Do(req)
 	if err != nil {
-		return nil, err
+		return map[string]interface{}{"error": err.Error(), "status_code": 0}, err
 	}
 	defer resp.Body.Close()
 
 	respBody, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return nil, err
+		return map[string]interface{}{"error": err.Error(), "status_code": float64(resp.StatusCode)}, err
 	}
 
-	var result map[string]interface{}
-	if err := json.Unmarshal(respBody, &result); err != nil {
+	// Initialize the result map to avoid nil map panic
+	result := make(map[string]interface{})
+	
+	var jsonData map[string]interface{}
+	if err := json.Unmarshal(respBody, &jsonData); err != nil {
 		// Return raw response if not JSON
-		return map[string]interface{}{
-			"status_code": float64(resp.StatusCode),
-			"body":        string(respBody),
-		}, nil
+		result["status_code"] = float64(resp.StatusCode)
+		result["body"] = string(respBody)
+		return result, nil
 	}
 
+	// Copy all fields from jsonData to result
+	for k, v := range jsonData {
+		result[k] = v
+	}
 	result["status_code"] = float64(resp.StatusCode)
 	return result, nil
 }

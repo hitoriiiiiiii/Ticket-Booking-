@@ -210,10 +210,10 @@ func SetupTestServices(t *testing.T) *TestServices {
 	dispatcher := events.NewDispatcher(redisCfg.Client, nil)
 
 	bookingCmdSvc := booking.NewCommandServiceWithDispatcher(cmdDB.Pool, dispatcher)
-	bookingQuerySvc := booking.NewQueryService(queryDB.Pool)
+	bookingQuerySvc := booking.NewQueryService(queryDB.Pool, cmdDB.Pool)
 
 	userCmdSvc := user.NewCommandServiceWithDispatcher(cmdDB.Pool, dispatcher)
-	userQuerySvc := user.NewQueryService(queryDB.Pool)
+	userQuerySvc := user.NewQueryService(queryDB.Pool, cmdDB.Pool)
 
 	// Initialize Payment service
 	paymentRepo := payments.NewRepository(cmdDB.Pool)
@@ -223,7 +223,7 @@ func SetupTestServices(t *testing.T) *TestServices {
 // Initialize Notification services
 	notificationRepo := notification.NewRepository(cmdDB.Pool)
 	notificationCmdSvc := notification.NewCommandService(notificationRepo)
-	notificationQuerySvc := notification.NewQueryService(cmdDB.Pool)
+	notificationQuerySvc := notification.NewQueryService(queryDB.Pool, cmdDB.Pool)
 
 	// Initialize Movie services
 	movieCmdSvc := movie.NewCommandServiceWithDispatcher(dispatcher)

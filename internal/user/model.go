@@ -1,10 +1,11 @@
-// models for the user
+// Models for user database
+
 package user
 
 import "time"
 
 type User struct {
-	ID        int       `json:"id"`
+	ID        string    `json:"id"`
 	Username  string    `json:"username"`
 	Email     string    `json:"email"`
 	IsAdmin   bool      `json:"is_admin"`

@@ -13,17 +13,18 @@ import (
 var jwtKey = []byte("supersecretkey")
 
 type QueryService struct {
-	DB *pgxpool.Pool
+	QueryDB *pgxpool.Pool
+	CmdDB   *pgxpool.Pool
 }
 
-func NewQueryService(db *pgxpool.Pool) *QueryService {
-	return &QueryService{DB: db}
+func NewQueryService(queryDB, cmdDB *pgxpool.Pool) *QueryService {
+	return &QueryService{QueryDB: queryDB, CmdDB: cmdDB}
 }
 
-// Login - Query to verify user credentials and generate JWT token
+// Login - Query to verify user credentials and generate JWT token (from CommandDB)
 func (s *QueryService) Login(ctx context.Context, req LoginRequest) (string, error) {
 	var user User
-	err := s.DB.QueryRow(ctx, `
+	err := s.CmdDB.QueryRow(ctx, `
 		SELECT id, username, email, password, is_admin, created_at
 		FROM users WHERE email = $1
 	`, req.Email).Scan(&user.ID, &user.Username, &user.Email, &user.Password, &user.IsAdmin, &user.CreatedAt)
@@ -51,9 +52,9 @@ func (s *QueryService) Login(ctx context.Context, req LoginRequest) (string, err
 	return tokenString, nil
 }
 
-// ListUsers - Query to get all users
+// ListUsers - Query to get all users (from CommandDB)
 func (s *QueryService) ListUsers(ctx context.Context) ([]User, error) {
-	rows, err := s.DB.Query(ctx, `
+	rows, err := s.CmdDB.Query(ctx, `
 		SELECT id, username, email, is_admin, created_at
 		FROM users
 	`)
@@ -75,10 +76,10 @@ func (s *QueryService) ListUsers(ctx context.Context) ([]User, error) {
 	return users, nil
 }
 
-// GetUserByID - Query to get a single user by ID
+// GetUserByID - Query to get a single user by ID (from CommandDB)
 func (s *QueryService) GetUserByID(ctx context.Context, id string) (*User, error) {
 	var user User
-	err := s.DB.QueryRow(ctx, `
+	err := s.CmdDB.QueryRow(ctx, `
 		SELECT id, username, email, is_admin, created_at
 		FROM users WHERE id = $1
 	`, id).Scan(&user.ID, &user.Username, &user.Email, &user.IsAdmin, &user.CreatedAt)

@@ -3,6 +3,7 @@
 package user
 
 import (
+	"log"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -37,7 +38,8 @@ func (h *QueryHandler) Login(c *gin.Context) {
 func (h *QueryHandler) ListUsers(c *gin.Context) {
 	users, err := h.QueryService.ListUsers(c.Request.Context())
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch users"})
+		log.Printf("ERROR: ListUsers failed: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch users: " + err.Error()})
 		return
 	}
 	c.JSON(http.StatusOK, users)

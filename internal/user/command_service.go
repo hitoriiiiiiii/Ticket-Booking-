@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/hitorii/ticket-booking/internal/events"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"golang.org/x/crypto/bcrypt"
@@ -43,7 +44,11 @@ func (s *CommandService) Register(ctx context.Context, req RegisterRequest) (*Us
 		return nil, errors.New("error hashing password")
 	}
 
+	// Generate UUID for user
+	userID := uuid.New().String()
+
 	user := &User{
+		ID:        userID,
 		Username:  req.Username,
 		Email:     req.Email,
 		Password:  string(hashedPassword),
@@ -53,9 +58,9 @@ func (s *CommandService) Register(ctx context.Context, req RegisterRequest) (*Us
 
 	// Insert into database
 	_, err = s.DB.Exec(ctx, `
-		INSERT INTO users (username, email, password, is_admin, created_at)
-		VALUES ($1, $2, $3, $4, $5)
-	`, user.Username, user.Email, user.Password, user.IsAdmin, user.CreatedAt)
+		INSERT INTO users (id, username, email, password, is_admin, created_at)
+		VALUES ($1, $2, $3, $4, $5, $6)
+	`, user.ID, user.Username, user.Email, user.Password, user.IsAdmin, user.CreatedAt)
 
 	if err != nil {
 		return nil, err
@@ -63,14 +68,13 @@ func (s *CommandService) Register(ctx context.Context, req RegisterRequest) (*Us
 
 	// Emit event for event-driven flow
 	if s.Dispatcher != nil {
-		userIDStr := fmt.Sprintf("%d", user.ID)
 		payload := events.EventPayload{
-			UserID:   userIDStr,
+			UserID:   userID,
 			Username: req.Username,
 			Email:    req.Email,
 			IsAdmin:  req.IsAdmin,
 		}
-		_ = s.Dispatcher.Publish(ctx, events.EventUserRegistered, userIDStr, payload)
+		_ = s.Dispatcher.Publish(ctx, events.EventUserRegistered, userID, payload)
 	}
 
 	return user, nil
@@ -78,6 +82,11 @@ func (s *CommandService) Register(ctx context.Context, req RegisterRequest) (*Us
 
 // UpdateUser - Command to update user information
 func (s *CommandService) UpdateUser(ctx context.Context, id string, req UpdateUserRequest) error {
+	// Validate UUID
+	if id == "" {
+		return errors.New("user ID is required")
+	}
+
 	// Validate input
 	if req.Username == "" {
 		return errors.New("username is required")
@@ -110,8 +119,13 @@ func (s *CommandService) UpdateUser(ctx context.Context, id string, req UpdateUs
 
 // DeleteUser - Command to delete a user
 func (s *CommandService) DeleteUser(ctx context.Context, id string) error {
+	// Validate UUID
+	if id == "" {
+		return errors.New("user ID is required")
+	}
+
 	// Delete from database
-	_, err := s.DB.Exec(ctx, `DELETE FROM users WHERE id = $1`, id)
+	_, err := s.DB.Exec(ctx, "DELETE FROM users WHERE id = $1", id)
 	if err != nil {
 		return err
 	}
@@ -125,4 +139,18 @@ func (s *CommandService) DeleteUser(ctx context.Context, id string) error {
 	}
 
 	return nil
+}
+
+// GetUserByID - Query to get user by ID
+func (s *CommandService) GetUserByID(ctx context.Context, id string) (*User, error) {
+	var user User
+	err := s.DB.QueryRow(ctx, `
+		SELECT id, username, email, is_admin, created_at FROM users WHERE id = $1
+	`, id).Scan(&user.ID, &user.Username, &user.Email, &user.IsAdmin, &user.CreatedAt)
+
+	if err != nil {
+		return nil, fmt.Errorf("user not found: %w", err)
+	}
+
+	return &user, nil
 }

@@ -1,4 +1,4 @@
-﻿package booking
+package booking
 
 // Real model updater (CQRS projection)
 
@@ -16,6 +16,10 @@ import (
 type ReservationProjection struct {
 	DB         *pgxpool.Pool
 	EventStore *events.Store
+}
+
+func NewReservationProjection(db *pgxpool.Pool, eventStore *events.Store) *ReservationProjection {
+	return &ReservationProjection{DB: db, EventStore: eventStore}
 }
 
 func (p *ReservationProjection) Run() {
@@ -63,13 +67,14 @@ func (p *ReservationProjection) Run() {
 			}
 			json.Unmarshal(payload, &data)
 
-			// Insert or update reservation
+			// Insert or update reservation in projection
 			_, err := p.DB.Exec(context.Background(),
-				`INSERT INTO reservations(seat_id, user_id, status)
-				 VALUES ($1, $2, 'ACTIVE')
+				`INSERT INTO reservation_projection(seat_id, user_id, status)
+				 VALUES ($1, $2, 'HELD')
 				 ON CONFLICT (seat_id) DO UPDATE SET
 				 user_id = EXCLUDED.user_id,
-				 status = 'ACTIVE'`,
+				 status = 'HELD',
+				 updated_at = NOW()`,
 				data.SeatID, data.UserID,
 			)
 			if err != nil {
@@ -85,9 +90,9 @@ func (p *ReservationProjection) Run() {
 			}
 			json.Unmarshal(payload, &data)
 
-			// Update reservation status to confirmed
+			// Update reservation status to confirmed in projection
 			_, err := p.DB.Exec(context.Background(),
-				`UPDATE reservations SET status = 'BOOKED' WHERE seat_id = $1`,
+				`UPDATE reservation_projection SET status = 'BOOKED', updated_at = NOW() WHERE seat_id = $1`,
 				data.SeatID,
 			)
 			if err != nil {
@@ -103,9 +108,9 @@ func (p *ReservationProjection) Run() {
 			}
 			json.Unmarshal(payload, &data)
 
-			// Update reservation status to cancelled
+			// Update reservation status to cancelled in projection
 			_, err := p.DB.Exec(context.Background(),
-				`UPDATE reservations SET status = 'CANCELLED' WHERE seat_id = $1`,
+				`UPDATE reservation_projection SET status = 'CANCELLED', updated_at = NOW() WHERE seat_id = $1`,
 				data.SeatID,
 			)
 			if err != nil {
@@ -130,4 +135,16 @@ func (p *ReservationProjection) Run() {
 	}
 
 	log.Println("Projection run completed")
+}
+
+// StartProjectionWorker starts the projection worker in a goroutine
+func StartProjectionWorker(db *pgxpool.Pool, eventStore *events.Store) {
+	projection := NewReservationProjection(db, eventStore)
+	go func() {
+		for {
+			projection.Run()
+			// Sleep before next run
+			time.Sleep(10 * time.Second)
+		}
+	}()
 }

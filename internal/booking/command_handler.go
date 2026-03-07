@@ -1,10 +1,12 @@
 package booking
 
 import (
+	"errors"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
 	"github.com/hitorii/ticket-booking/internal/events"
+	"github.com/hitorii/ticket-booking/internal/utils"
 )
 
 type CommandHandler struct {
@@ -31,8 +33,24 @@ func (h *CommandHandler) ReserveTicket(c *gin.Context) {
 		return
 	}
 
+	// Validate UUID format
+	if err := utils.ValidateUUID("user_id", req.UserID); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid user_id format"})
+		return
+	}
+	if err := utils.ValidateUUID("seat_id", req.SeatID); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid seat_id format"})
+		return
+	}
+
 	err := h.CommandService.ReserveTicket(c.Request.Context(), req.UserID, req.SeatID)
 	if err != nil {
+		// Check for specific error types
+		if errors.Is(err, utils.ErrUserNotFound) {
+			c.JSON(http.StatusNotFound, gin.H{"error": "User not found"})
+			return
+		}
+		// Handle other errors
 		c.JSON(http.StatusConflict, gin.H{
 			"error": err.Error(),
 		})
@@ -55,6 +73,16 @@ func (h *CommandHandler) ConfirmTicket(c *gin.Context) {
 
 	if err := c.BindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request"})
+		return
+	}
+
+	// Validate UUID format
+	if err := utils.ValidateUUID("user_id", req.UserID); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid user_id format"})
+		return
+	}
+	if err := utils.ValidateUUID("seat_id", req.SeatID); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid seat_id format"})
 		return
 	}
 
@@ -85,6 +113,16 @@ func (h *CommandHandler) CancelTicket(c *gin.Context) {
 		return
 	}
 
+	// Validate UUID format
+	if err := utils.ValidateUUID("user_id", req.UserID); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid user_id format"})
+		return
+	}
+	if err := utils.ValidateUUID("seat_id", req.SeatID); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid seat_id format"})
+		return
+	}
+
 	err := h.CommandService.CancelTicket(c.Request.Context(), req.UserID, req.SeatID)
 	if err != nil {
 		c.JSON(http.StatusNotFound, gin.H{
@@ -99,3 +137,4 @@ func (h *CommandHandler) CancelTicket(c *gin.Context) {
 		"message": "Ticket Cancelled",
 	})
 }
+

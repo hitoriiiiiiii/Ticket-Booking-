@@ -7,11 +7,12 @@ import (
 )
 
 type QueryService struct {
-	DB *pgxpool.Pool
+	QueryDB *pgxpool.Pool
+	CmdDB   *pgxpool.Pool
 }
 
-func NewQueryService(db *pgxpool.Pool) *QueryService {
-	return &QueryService{DB: db}
+func NewQueryService(queryDB, cmdDB *pgxpool.Pool) *QueryService {
+	return &QueryService{QueryDB: queryDB, CmdDB: cmdDB}
 }
 
 // SeatStatus represents the status of a seat
@@ -20,11 +21,11 @@ type SeatStatus struct {
 	Status string `json:"status"`
 }
 
-// GetAvailability - Query to check seat availability
+// GetAvailability - Query to check seat availability (from QueryDB - projection)
 func (s *QueryService) GetAvailability(ctx context.Context, seatID string) (*SeatStatus, error) {
 	var status string
 
-	err := s.DB.QueryRow(
+	err := s.QueryDB.QueryRow(
 		ctx,
 		"SELECT status FROM reservations WHERE seat_id=$1",
 		seatID,
@@ -52,9 +53,9 @@ type Event struct {
 	CreatedAt string `json:"time"`
 }
 
-// GetEvents - Query to get all events
+// GetEvents - Query to get all events (from CommandDB - event store)
 func (s *QueryService) GetEvents(ctx context.Context) ([]Event, error) {
-	rows, err := s.DB.Query(
+	rows, err := s.CmdDB.Query(
 		ctx,
 		"SELECT aggregate_id, event_type, payload, created_at FROM events ORDER BY created_at DESC",
 	)
@@ -90,9 +91,9 @@ type Reservation struct {
 	Status string `json:"status"`
 }
 
-// GetUserReservations - Query to get all reservations for a user
+// GetUserReservations - Query to get all reservations for a user (from QueryDB - projection)
 func (s *QueryService) GetUserReservations(ctx context.Context, userID string) ([]Reservation, error) {
-	rows, err := s.DB.Query(
+	rows, err := s.QueryDB.Query(
 		ctx,
 		"SELECT id, user_id, seat_id, status FROM reservations WHERE user_id=$1",
 		userID,

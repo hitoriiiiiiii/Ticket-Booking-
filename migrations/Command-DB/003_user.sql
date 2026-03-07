@@ -1,5 +1,10 @@
+-- Create new migration for updated users table with UUID support
+-- This migration updates the users table to use UUID as primary key
+
+DROP TABLE IF EXISTS users;
+
 CREATE TABLE IF NOT EXISTS users (
-    id SERIAL PRIMARY KEY,
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     username VARCHAR(100) NOT NULL UNIQUE,
     email VARCHAR(255) NOT NULL UNIQUE,
     is_admin BOOLEAN DEFAULT false,

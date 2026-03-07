@@ -9,13 +9,16 @@ import (
 	"math/rand"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/hitorii/ticket-booking/internal/events"
+	"github.com/hitorii/ticket-booking/internal/utils"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 type CommandService struct {
 	Repo       *Repository
 	Dispatcher *events.Dispatcher
+	DB         *pgxpool.Pool
 }
 
 func NewCommandService(repo *Repository) *CommandService {
@@ -24,6 +27,12 @@ func NewCommandService(repo *Repository) *CommandService {
 
 func NewCommandServiceWithDispatcher(repo *Repository, dispatcher *events.Dispatcher) *CommandService {
 	return &CommandService{Repo: repo, Dispatcher: dispatcher}
+}
+
+// NewCommandServiceWithDB creates command service with database pool
+func NewCommandServiceWithDB(db *pgxpool.Pool) *CommandService {
+	repo := NewRepository(db)
+	return &CommandService{Repo: repo, DB: db}
 }
 
 // InitiatePayment - Command to initiate a new payment
@@ -39,7 +48,17 @@ func (s *CommandService) InitiatePayment(ctx context.Context, req InitiatePaymen
 		return nil, errors.New("amount must be positive")
 	}
 
+	// Validate UUIDs
+	if err := utils.ValidateUUID("booking_id", req.BookingID); err != nil {
+		return nil, fmt.Errorf("invalid booking_id: %w", err)
+	}
+	if err := utils.ValidateUUID("user_id", req.UserID); err != nil {
+		return nil, fmt.Errorf("invalid user_id: %w", err)
+	}
+
+	// Generate proper UUID for payment
 	payment := &Payment{
+		ID:        uuid.New().String(),
 		BookingID: req.BookingID,
 		UserID:    req.UserID,
 		Amount:    req.Amount,
@@ -72,6 +91,11 @@ func (s *CommandService) VerifyPayment(ctx context.Context, req VerifyPaymentReq
 	// Validate input
 	if req.PaymentID == "" {
 		return errors.New("payment ID is required")
+	}
+
+	// Validate UUID
+	if err := utils.ValidateUUID("payment_id", req.PaymentID); err != nil {
+		return fmt.Errorf("invalid payment_id: %w", err)
 	}
 
 	payment, err := s.Repo.GetPaymentByID(req.PaymentID)
@@ -130,6 +154,11 @@ func (s *CommandService) RefundPayment(ctx context.Context, paymentID string) er
 		return errors.New("payment ID is required")
 	}
 
+	// Validate UUID
+	if err := utils.ValidateUUID("payment_id", paymentID); err != nil {
+		return fmt.Errorf("invalid payment_id: %w", err)
+	}
+
 	payment, err := s.Repo.GetPaymentByID(paymentID)
 	if err != nil {
 		return err
@@ -157,10 +186,4 @@ func (s *CommandService) RefundPayment(ctx context.Context, paymentID string) er
 	}
 
 	return nil
-}
-
-// Initialize CommandService with database pool (for compatibility)
-func NewCommandServiceWithDB(db *pgxpool.Pool) *CommandService {
-	repo := NewRepository(db)
-	return &CommandService{Repo: repo}
 }
