@@ -21,11 +21,13 @@ type SeatStatus struct {
 	Status string `json:"status"`
 }
 
-// GetAvailability - Query to check seat availability (from QueryDB - projection)
+// GetAvailability - Query to check seat availability (from CommandDB - source of truth)
 func (s *QueryService) GetAvailability(ctx context.Context, seatID string) (*SeatStatus, error) {
 	var status string
 
-	err := s.QueryDB.QueryRow(
+	// Use CommandDB as the source of truth for seat availability
+	// QueryDB may not have the latest data due to async projection
+	err := s.CmdDB.QueryRow(
 		ctx,
 		"SELECT status FROM reservations WHERE seat_id=$1",
 		seatID,
@@ -91,9 +93,11 @@ type Reservation struct {
 	Status string `json:"status"`
 }
 
-// GetUserReservations - Query to get all reservations for a user (from QueryDB - projection)
+// GetUserReservations - Query to get all reservations for a user (from CommandDB - source of truth)
 func (s *QueryService) GetUserReservations(ctx context.Context, userID string) ([]Reservation, error) {
-	rows, err := s.QueryDB.Query(
+	// Use CommandDB as the source of truth for user reservations
+	// QueryDB may not have the latest data due to async projection
+	rows, err := s.CmdDB.Query(
 		ctx,
 		"SELECT id, user_id, seat_id, status FROM reservations WHERE user_id=$1",
 		userID,

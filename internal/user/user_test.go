@@ -4,6 +4,8 @@ import (
 	"context"
 	"errors"
 	"testing"
+
+	"github.com/google/uuid"
 )
 
 // RegisterRequest is used in tests - it's defined in command_handler.go
@@ -12,15 +14,15 @@ import (
 // TestUserModel tests the User struct
 func TestUserModel(t *testing.T) {
 	user := User{
-		ID:       1,
+		ID:       uuid.New().String(),
 		Username: "testuser",
 		Email:    "test@example.com",
 		IsAdmin:  false,
 		Password: "hashedpassword",
 	}
 
-	if user.ID != 1 {
-		t.Errorf("Expected ID 1, got %d", user.ID)
+	if user.ID == "" {
+		t.Errorf("Expected non-empty ID")
 	}
 	if user.Username != "testuser" {
 		t.Errorf("Expected username testuser, got %s", user.Username)
@@ -38,7 +40,7 @@ func TestUserPasswordOmission(t *testing.T) {
 	// This test verifies the JSON omitempty tag works
 	// The password field has `json:"password,omitempty"` in model
 	user := User{
-		ID:       1,
+		ID:       uuid.New().String(),
 		Username: "testuser",
 		Email:    "test@example.com",
 		Password: "",
@@ -179,7 +181,7 @@ func validateUpdateUserRequest(req UpdateUserRequest) error {
 // Benchmark tests
 func BenchmarkUserModel(b *testing.B) {
 	user := User{
-		ID:       1,
+		ID:       uuid.New().String(),
 		Username: "testuser",
 		Email:    "test@example.com",
 		IsAdmin:  false,

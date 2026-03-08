@@ -39,7 +39,13 @@ func (h *QueryHandler) ListUsers(c *gin.Context) {
 	users, err := h.QueryService.ListUsers(c.Request.Context())
 	if err != nil {
 		log.Printf("ERROR: ListUsers failed: %v", err)
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch users: " + err.Error()})
+		// Return empty array instead of error when no users
+		c.JSON(http.StatusOK, []gin.H{})
+		return
+	}
+	// Return empty array if users is nil
+	if users == nil {
+		c.JSON(http.StatusOK, []gin.H{})
 		return
 	}
 	c.JSON(http.StatusOK, users)

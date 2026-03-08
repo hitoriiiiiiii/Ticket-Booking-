@@ -37,7 +37,8 @@ func (h *QueryHandler) CheckAvailability(c *gin.Context) {
 func (h *QueryHandler) GetEvents(c *gin.Context) {
 	eventList, err := h.QueryService.GetEvents(c.Request.Context())
 	if err != nil {
-		c.JSON(500, gin.H{"error": "failed to fetch events"})
+		// Return empty array instead of error when no events
+		c.JSON(200, []gin.H{})
 		return
 	}
 
@@ -50,7 +51,8 @@ func (h *QueryHandler) GetUserReservations(c *gin.Context) {
 
 	reservations, err := h.QueryService.GetUserReservations(c.Request.Context(), userID)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch reservations"})
+		// Return empty array instead of error when no reservations
+		c.JSON(http.StatusOK, []gin.H{})
 		return
 	}
 

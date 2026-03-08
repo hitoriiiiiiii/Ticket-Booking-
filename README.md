@@ -526,7 +526,7 @@ The Docker Compose setup includes the following services:
 
 | Service          | Container Name        | Port | Description              |
 | ---------------- | --------------------- | ---- | ------------------------ |
-| `postgres_cmd`   | ticket-cmd-db         | 5433 | Command Database (Write) |
+| `postgres_cmd`   | ticket-cmd-db         | 5433 | Comma+nd Database (Write) |
 | `postgres_query` | ticket-query-db       | 5434 | Query Database (Read)    |
 | `redis`          | ticket-booking-redis  | 6379 | Cache & Queue            |
 | `zookeeper`      | ticket-zookeeper      | 2181 | Kafka Manager            |

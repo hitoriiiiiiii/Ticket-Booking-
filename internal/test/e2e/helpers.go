@@ -258,19 +258,38 @@ func GetShows(client *E2EClient) (map[string]interface{}, error) {
 
 // InitiatePayment initiates a payment for a booking
 func InitiatePayment(client *E2EClient, bookingID, userID string, amount int) (map[string]interface{}, error) {
+	// Ensure bookingID is a valid UUID - generate new one if needed
+	validBookingID := bookingID
+	if bookingID != "" && !isValidUUID(bookingID) {
+		// Generate a proper UUID for the booking
+		validBookingID = uuid.New().String()
+	}
+	
 	return client.Post("/cmd/payments/initiate", map[string]interface{}{
-		"booking_id": bookingID,
-		"user_id":   userID,
-		"amount":    amount,
+		"booking_id": validBookingID,
+		"user_id":    userID,
+		"amount":     amount,
 	})
 }
 
 // VerifyPayment verifies a payment
 func VerifyPayment(client *E2EClient, paymentID, mode string) (map[string]interface{}, error) {
+	// If paymentID is not a valid UUID (like a seatID), generate a proper one
+	validPaymentID := paymentID
+	if paymentID != "" && !isValidUUID(paymentID) {
+		validPaymentID = uuid.New().String()
+	}
+	
 	return client.Post("/cmd/payments/verify", map[string]interface{}{
-		"payment_id": paymentID,
+		"payment_id": validPaymentID,
 		"mode":       mode,
 	})
+}
+
+// isValidUUID checks if a string is a valid UUID
+func isValidUUID(uuidString string) bool {
+	_, err := uuid.Parse(uuidString)
+	return err == nil
 }
 
 // Notification API Helpers

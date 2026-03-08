@@ -3,7 +3,6 @@ package integration
 
 import (
 	"context"
-	"strconv"
 	"testing"
 	"time"
 
@@ -32,7 +31,7 @@ func TestUserIntegration_Register(t *testing.T) {
 
 		u, err := svc.UserCmdSvc.Register(ctx, req)
 		require.NoError(t, err)
-		assert.NotZero(t, u.ID)
+		assert.NotEmpty(t, u.ID)
 		assert.Equal(t, req.Username, u.Username)
 		assert.Equal(t, req.Email, u.Email)
 	})
@@ -182,18 +181,15 @@ func TestUserIntegration_GetUserByID(t *testing.T) {
 	require.NoError(t, err)
 
 	t.Run("GetUserByID_Exists", func(t *testing.T) {
-		u, err := svc.UserQuerySvc.GetUserByID(ctx, strconv.Itoa(createdUser.ID))
-		if err != nil {
-			// Try with default ID
-			u, err = svc.UserQuerySvc.GetUserByID(ctx, "1")
-		}
+		// Use the created user's ID directly (it's already a string UUID)
+		u, err := svc.UserQuerySvc.GetUserByID(ctx, createdUser.ID)
 		if err == nil {
 			assert.Equal(t, req.Username, u.Username)
 		}
 	})
 
 	t.Run("GetUserID_NotFound", func(t *testing.T) {
-		_, err := svc.UserQuerySvc.GetUserByID(ctx, "99999")
+		_, err := svc.UserQuerySvc.GetUserByID(ctx, "00000000-0000-0000-0000-000000000999")
 		require.Error(t, err)
 	})
 }

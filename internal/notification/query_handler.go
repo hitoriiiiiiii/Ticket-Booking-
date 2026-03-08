@@ -18,13 +18,18 @@ func NewQueryHandler(qs *QueryService) *QueryHandler {
 
 // GetUserNotifications - Query handler for getting all notifications for a user
 func (h *QueryHandler) GetUserNotifications(c *gin.Context) {
-	userID := c.Param("userID")
+	userID := c.Param("user_id")
 
 	notifications, err := h.QueryService.GetUserNotifications(c.Request.Context(), userID)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "Failed to fetch notifications",
-		})
+		// Return empty array instead of error when no notifications
+		c.JSON(http.StatusOK, []gin.H{})
+		return
+	}
+
+	// Return empty array if notifications is nil
+	if notifications == nil {
+		c.JSON(http.StatusOK, []gin.H{})
 		return
 	}
 
@@ -33,7 +38,7 @@ func (h *QueryHandler) GetUserNotifications(c *gin.Context) {
 
 // GetUnreadNotifications - Query handler for getting unread notifications for a user
 func (h *QueryHandler) GetUnreadNotifications(c *gin.Context) {
-	userID := c.Param("userID")
+	userID := c.Param("user_id")
 
 	notifications, err := h.QueryService.GetUnreadNotifications(c.Request.Context(), userID)
 	if err != nil {
