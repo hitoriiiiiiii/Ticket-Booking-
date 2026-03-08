@@ -1,0 +1,200 @@
+services:
+  # COMMAND DATABASE (WRITE DB)
+
+  postgres_cmd:
+    image: postgres:15
+    container_name: ticket-cmd-db
+    restart: always
+
+    environment:
+      POSTGRES_USER: '${DB_USER}'
+      POSTGRES_PASSWORD: '${DB_PASSWORD}'
+      POSTGRES_DB: 'ticket_cmd_db'
+
+    ports:
+      - '5433:5432'
+
+    volumes:
+      - ./postgres-cmd-data:/var/lib/postgresql/data
+
+    networks:
+      - ticket-booking-network
+
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U ${DB_USER}']
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # QUERY DATABASE (READ DB)
+
+  postgres_query:
+    image: postgres:15
+    container_name: ticket-query-db
+    restart: always
+
+    environment:
+      POSTGRES_USER: '${DB_USER}'
+      POSTGRES_PASSWORD: '${DB_PASSWORD}'
+      POSTGRES_DB: 'ticket_query_db'
+
+    ports:
+      - '5434:5432'
+
+    volumes:
+      - ./postgres-query-data:/var/lib/postgresql/data
+
+    networks:
+      - ticket-booking-network
+
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U ${DB_USER}']
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # REDIS (QUEUE + CACHE)
+
+  redis:
+    image: redis:7-alpine
+    container_name: ticket-booking-redis
+    restart: always
+
+    ports:
+      - '6379:6379'
+
+    networks:
+      - ticket-booking-network
+
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # ZOOKEEPER (Kafka Manager)
+
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.5.0
+    container_name: ticket-zookeeper
+    restart: always
+
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+
+    ports:
+      - '2181:2181'
+
+    networks:
+      - ticket-booking-network
+
+  # KAFKA BROKER
+
+  kafka:
+    image: confluentinc/cp-kafka:7.5.0
+    container_name: ticket-kafka
+    restart: always
+
+    depends_on:
+      - zookeeper
+
+    ports:
+      - '9092:9092'
+
+    environment:
+      KAFKA_BROKER_ID: 1
+
+      KAFKA_ZOOKEEPER_CONNECT: 'zookeeper:2181'
+
+      # Kafka internal + external listeners
+      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
+
+      # Required configs
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: 'true'
+
+    networks:
+      - ticket-booking-network
+
+  # API SERVICE (COMMAND SIDE)
+
+  api:
+    build:
+      context: .
+      dockerfile: docker/DockerFile.api
+
+    container_name: ticket-booking-api
+    restart: always
+
+    env_file:
+      - .env
+
+    environment:
+      COMMAND_DATABASE_URL: 'postgres://${DB_USER}:${DB_PASSWORD}@postgres_cmd:5432/ticket_cmd_db?sslmode=disable'
+      QUERY_DATABASE_URL: 'postgres://${DB_USER}:${DB_PASSWORD}@postgres_query:5432/ticket_query_db?sslmode=disable'
+
+      REDIS_URL: 'redis://redis:6379'
+
+      # Kafka connection
+      KAFKA_BROKER: 'kafka:9092'
+
+      PORT: '8081'
+
+    ports:
+      - '8081:8081'
+
+    depends_on:
+      postgres_cmd:
+        condition: service_healthy
+      postgres_query:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      kafka:
+        condition: service_started
+
+    networks:
+      - ticket-booking-network
+
+  # WORKER SERVICE (QUERY SIDE)
+
+  worker:
+    build:
+      context: .
+      dockerfile: docker/DockerFile.worker
+
+    container_name: ticket-booking-worker
+    restart: always
+
+    env_file:
+      - .env
+
+    environment:
+      COMMAND_DATABASE_URL: 'postgres://${DB_USER}:${DB_PASSWORD}@postgres_cmd:5432/ticket_cmd_db?sslmode=disable'
+      QUERY_DATABASE_URL: 'postgres://${DB_USER}:${DB_PASSWORD}@postgres_query:5432/ticket_query_db?sslmode=disable'
+
+      REDIS_URL: 'redis://redis:6379'
+
+      # Kafka connection
+      KAFKA_BROKER: 'kafka:9092'
+
+    depends_on:
+      postgres_cmd:
+        condition: service_healthy
+      postgres_query:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      kafka:
+        condition: service_started
+
+    networks:
+      - ticket-booking-network
+
+# NETWORK
+
+networks:
+  ticket-booking-network:
+    driver: bridge

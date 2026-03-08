@@ -1,0 +1,7 @@
+CREATE TABLE IF NOT EXISTS movies (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    genre VARCHAR(50) NOT NULL,
+    duration INT NOT NULL,
+    created_at TIMESTAMP DEFAULT NOW()
+);

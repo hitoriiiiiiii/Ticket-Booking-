@@ -1,0 +1,8 @@
+CREATE TABLE IF NOT EXISTS shows (
+    id SERIAL PRIMARY KEY,
+    movie_id INT NOT NULL REFERENCES movies(id) ON DELETE CASCADE,
+    theater VARCHAR(100) NOT NULL,
+    start_time TIMESTAMP NOT NULL,
+    end_time TIMESTAMP NOT NULL,
+    created_at TIMESTAMP DEFAULT NOW()
+);

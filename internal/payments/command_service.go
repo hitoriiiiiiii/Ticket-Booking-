@@ -1,0 +1,189 @@
+// Command service for payment write operations (CQRS)
+
+package payments
+
+import (
+	"context"
+	"errors"
+	"fmt"
+	"math/rand"
+	"time"
+
+	"github.com/google/uuid"
+	"github.com/hitorii/ticket-booking/internal/events"
+	"github.com/hitorii/ticket-booking/internal/utils"
+	"github.com/jackc/pgx/v5/pgxpool"
+)
+
+type CommandService struct {
+	Repo       *Repository
+	Dispatcher *events.Dispatcher
+	DB         *pgxpool.Pool
+}
+
+func NewCommandService(repo *Repository) *CommandService {
+	return &CommandService{Repo: repo}
+}
+
+func NewCommandServiceWithDispatcher(repo *Repository, dispatcher *events.Dispatcher) *CommandService {
+	return &CommandService{Repo: repo, Dispatcher: dispatcher}
+}
+
+// NewCommandServiceWithDB creates command service with database pool
+func NewCommandServiceWithDB(db *pgxpool.Pool) *CommandService {
+	repo := NewRepository(db)
+	return &CommandService{Repo: repo, DB: db}
+}
+
+// InitiatePayment - Command to initiate a new payment
+func (s *CommandService) InitiatePayment(ctx context.Context, req InitiatePaymentRequest) (*Payment, error) {
+	// Validate input
+	if req.BookingID == "" {
+		return nil, errors.New("booking ID is required")
+	}
+	if req.UserID == "" {
+		return nil, errors.New("user ID is required")
+	}
+	if req.Amount <= 0 {
+		return nil, errors.New("amount must be positive")
+	}
+
+	// Validate UUIDs
+	if err := utils.ValidateUUID("booking_id", req.BookingID); err != nil {
+		return nil, fmt.Errorf("invalid booking_id: %w", err)
+	}
+	if err := utils.ValidateUUID("user_id", req.UserID); err != nil {
+		return nil, fmt.Errorf("invalid user_id: %w", err)
+	}
+
+	// Generate proper UUID for payment
+	payment := &Payment{
+		ID:        uuid.New().String(),
+		BookingID: req.BookingID,
+		UserID:    req.UserID,
+		Amount:    req.Amount,
+		Status:    "PENDING",
+		CreatedAt: time.Now(),
+	}
+
+	err := s.Repo.CreatePayment(payment)
+	if err != nil {
+		return nil, err
+	}
+
+	// Emit event for event-driven flow
+	if s.Dispatcher != nil {
+		payload := events.EventPayload{
+			UserID:    req.UserID,
+			BookingID: req.BookingID,
+			PaymentID: payment.ID,
+			Amount:    req.Amount,
+			Status:    "PENDING",
+		}
+		_ = s.Dispatcher.Publish(ctx, events.EventPaymentInitiated, payment.ID, payload)
+	}
+
+	return payment, nil
+}
+
+// VerifyPayment - Command to verify a payment
+func (s *CommandService) VerifyPayment(ctx context.Context, req VerifyPaymentRequest) error {
+	// Validate input
+	if req.PaymentID == "" {
+		return errors.New("payment ID is required")
+	}
+
+	// Validate UUID
+	if err := utils.ValidateUUID("payment_id", req.PaymentID); err != nil {
+		return fmt.Errorf("invalid payment_id: %w", err)
+	}
+
+	payment, err := s.Repo.GetPaymentByID(req.PaymentID)
+	if err != nil {
+		return err
+	}
+
+	if payment.Status != "PENDING" {
+		return errors.New("payment already processed")
+	}
+
+	var finalStatus string
+
+	switch req.Mode {
+	case "success":
+		finalStatus = "SUCCESS"
+	case "fail":
+		finalStatus = "FAILED"
+	case "random":
+		rand.Seed(time.Now().UnixNano())
+		if rand.Intn(2) == 0 {
+			finalStatus = "SUCCESS"
+		} else {
+			finalStatus = "FAILED"
+		}
+	default:
+		return errors.New("invalid mode (use success/fail/random)")
+	}
+
+	txnID := fmt.Sprintf("mock_txn_%d", time.Now().Unix())
+
+	err = s.Repo.UpdateStatus(req.PaymentID, finalStatus, txnID)
+	if err != nil {
+		return err
+	}
+
+	// Emit event for event-driven flow
+	if s.Dispatcher != nil {
+		payload := events.EventPayload{
+			UserID:    payment.UserID,
+			BookingID: payment.BookingID,
+			PaymentID: req.PaymentID,
+			Amount:    payment.Amount,
+			Status:    finalStatus,
+		}
+		_ = s.Dispatcher.Publish(ctx, events.EventPaymentVerified, req.PaymentID, payload)
+	}
+
+	return nil
+}
+
+// RefundPayment - Command to refund a payment
+func (s *CommandService) RefundPayment(ctx context.Context, paymentID string) error {
+	// Validate input
+	if paymentID == "" {
+		return errors.New("payment ID is required")
+	}
+
+	// Validate UUID
+	if err := utils.ValidateUUID("payment_id", paymentID); err != nil {
+		return fmt.Errorf("invalid payment_id: %w", err)
+	}
+
+	payment, err := s.Repo.GetPaymentByID(paymentID)
+	if err != nil {
+		return err
+	}
+
+	if payment.Status != "SUCCESS" {
+		return errors.New("can only refund successful payments")
+	}
+
+	err = s.Repo.UpdateStatus(paymentID, "REFUNDED", "")
+	if err != nil {
+		return err
+	}
+
+	// Emit event for event-driven flow
+	if s.Dispatcher != nil {
+		payload := events.EventPayload{
+			UserID:    payment.UserID,
+			BookingID: payment.BookingID,
+			PaymentID: paymentID,
+			Amount:    payment.Amount,
+			Status:    "REFUNDED",
+		}
+		_ = s.Dispatcher.Publish(ctx, events.EventPaymentRefunded, paymentID, payload)
+	}
+
+	return nil
+}
