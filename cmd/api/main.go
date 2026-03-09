@@ -87,6 +87,10 @@ func main() {
 	// Pass CommandDB to notification query service for user notifications
 	notificationQueryService := notification.NewQueryService(queryDB, cmdDB)
 	notificationQueryHandler := notification.NewQueryHandler(notificationQueryService)
+	
+	// Initialize payment query handler
+	paymentQueryService := payments.NewQueryService(queryDB)
+	paymentQueryHandler := payments.NewQueryHandler(paymentQueryService)
 
 	if eventDispatcher != nil {
 		setupEventSubscribers(eventDispatcher)
@@ -97,18 +101,32 @@ func main() {
 	r.POST("/cmd/confirm", bookingCommandHandler.ConfirmTicket)
 	r.POST("/cmd/users/register", userCommandHandler.Register)
 	r.POST("/cmd/movies", movieCommandHandler.CreateMovie)
+	r.PUT("/cmd/movies/:id", movieCommandHandler.UpdateMovie)
+	r.DELETE("/cmd/movies/:id", movieCommandHandler.DeleteMovie)
 	r.POST("/cmd/shows", showCommandHandler.CreateShow)
+	r.PUT("/cmd/shows/:id", showCommandHandler.UpdateShow)
+	r.DELETE("/cmd/shows/:id", showCommandHandler.DeleteShow)
 	r.POST("/cmd/payments/initiate", paymentCommandHandler.InitiatePayment)
 	r.POST("/cmd/payments/verify", paymentCommandHandler.VerifyPayment)
+	r.POST("/cmd/payments/:id/refund", paymentCommandHandler.RefundPayment)
 
 	r.GET("/query/reservations/:user_id", bookingQueryHandler.GetUserReservations)
 	r.GET("/query/availability/:seat_id", bookingQueryHandler.CheckAvailability)
 	r.GET("/query/events", bookingQueryHandler.GetEvents)
 	r.GET("/query/users", userQueryHandler.ListUsers)
+	r.POST("/query/users/login", userQueryHandler.Login)
+	r.GET("/query/users/:id", userQueryHandler.GetUser)
 	r.GET("/query/movies", movieQueryHandler.GetMovies)
 	r.GET("/query/movies/:id", movieQueryHandler.GetMovie)
 	r.GET("/query/shows", showQueryHandler.GetShows)
+	r.GET("/query/shows/:id", showQueryHandler.GetShow)
+	r.GET("/query/shows/movie/:movieID", showQueryHandler.GetShowsByMovie)
+	r.GET("/query/payments/:id", paymentQueryHandler.GetPayment)
+	r.GET("/query/payments/booking/:bookingID", paymentQueryHandler.GetPaymentByBooking)
+	r.GET("/query/payments/user/:userID", paymentQueryHandler.GetPaymentsByUser)
 	r.GET("/query/notifications/:user_id", notificationQueryHandler.GetUserNotifications)
+	r.GET("/query/notifications/:user_id/unread", notificationQueryHandler.GetUnreadNotifications)
+	r.GET("/query/notifications/single/:id", notificationQueryHandler.GetNotification)
 
 	r.GET("/health", func(c *gin.Context) {
 		c.JSON(200, gin.H{"status": "healthy"})
@@ -119,6 +137,7 @@ func main() {
 
 	projection := &booking.ReservationProjection{
 		DB:         queryDB,
+		CmdDB:      cmdDB,
 		EventStore: eventStore,
 	}
 	go projection.Run()

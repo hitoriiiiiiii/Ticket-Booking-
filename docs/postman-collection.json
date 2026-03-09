@@ -1,7 +1,7 @@
 {
   "info": {
     "name": "Ticket Booking API",
-    "description": "API collection for the Ticket Booking System",
+    "description": "API collection for the Ticket Booking System - Complete API with all endpoints",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "variable": [
@@ -23,6 +23,18 @@
               "raw": "{{baseUrl}}/health",
               "host": ["{{baseUrl}}"],
               "path": ["health"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Prometheus Metrics",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/metrics",
+              "host": ["{{baseUrl}}"],
+              "path": ["metrics"]
             }
           },
           "response": []
@@ -59,9 +71,9 @@
           "request": {
             "method": "POST",
             "url": {
-              "raw": "{{baseUrl}}/cmd/users/login",
+              "raw": "{{baseUrl}}/query/users/login",
               "host": ["{{baseUrl}}"],
-              "path": ["cmd", "users", "login"]
+              "path": ["query", "users", "login"]
             },
             "header": [
               {
@@ -84,6 +96,18 @@
               "raw": "{{baseUrl}}/query/users",
               "host": ["{{baseUrl}}"],
               "path": ["query", "users"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get User by ID",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/query/users/:id",
+              "host": ["{{baseUrl}}"],
+              "path": ["query", "users", ":id"]
             }
           },
           "response": []
@@ -110,9 +134,9 @@
           "request": {
             "method": "GET",
             "url": {
-              "raw": "{{baseUrl}}/query/movies/1",
+              "raw": "{{baseUrl}}/query/movies/:id",
               "host": ["{{baseUrl}}"],
-              "path": ["query", "movies", "1"]
+              "path": ["query", "movies", ":id"]
             }
           },
           "response": []
@@ -138,6 +162,40 @@
             }
           },
           "response": []
+        },
+        {
+          "name": "Update Movie",
+          "request": {
+            "method": "PUT",
+            "url": {
+              "raw": "{{baseUrl}}/cmd/movies/:id",
+              "host": ["{{baseUrl}}"],
+              "path": ["cmd", "movies", ":id"]
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Inception\",\n  \"genre\": \"Sci-Fi\",\n  \"duration\": 150\n}"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Movie",
+          "request": {
+            "method": "DELETE",
+            "url": {
+              "raw": "{{baseUrl}}/cmd/movies/:id",
+              "host": ["{{baseUrl}}"],
+              "path": ["cmd", "movies", ":id"]
+            }
+          },
+          "response": []
         }
       ]
     },
@@ -152,6 +210,30 @@
               "raw": "{{baseUrl}}/query/shows",
               "host": ["{{baseUrl}}"],
               "path": ["query", "shows"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Show by ID",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/query/shows/:id",
+              "host": ["{{baseUrl}}"],
+              "path": ["query", "shows", ":id"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Shows by Movie",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/query/shows/movie/:movieID",
+              "host": ["{{baseUrl}}"],
+              "path": ["query", "shows", "movie", ":movieID"]
             }
           },
           "response": []
@@ -174,6 +256,40 @@
             "body": {
               "mode": "raw",
               "raw": "{\n  \"movie_id\": 1,\n  \"theater\": \"Theater A\",\n  \"start_time\": \"2024-01-20T14:00:00Z\"\n}"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update Show",
+          "request": {
+            "method": "PUT",
+            "url": {
+              "raw": "{{baseUrl}}/cmd/shows/:id",
+              "host": ["{{baseUrl}}"],
+              "path": ["cmd", "shows", ":id"]
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"movie_id\": 1,\n  \"theater\": \"Theater A\",\n  \"start_time\": \"2024-01-20T14:00:00Z\",\n  \"end_time\": \"2024-01-20T16:30:00Z\"\n}"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Show",
+          "request": {
+            "method": "DELETE",
+            "url": {
+              "raw": "{{baseUrl}}/cmd/shows/:id",
+              "host": ["{{baseUrl}}"],
+              "path": ["cmd", "shows", ":id"]
             }
           },
           "response": []
@@ -200,7 +316,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"user_id\": \"1\",\n  \"seat_id\": \"A1\"\n}"
+              "raw": "{\n  \"user_id\": \"550e8400-e29b-41d4-a716-446655440000\",\n  \"seat_id\": \"550e8400-e29b-41d4-a716-446655440001\"\n}"
             }
           },
           "response": []
@@ -222,7 +338,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"user_id\": \"1\",\n  \"seat_id\": \"A1\"\n}"
+              "raw": "{\n  \"user_id\": \"550e8400-e29b-41d4-a716-446655440000\",\n  \"seat_id\": \"550e8400-e29b-41d4-a716-446655440001\"\n}"
             }
           },
           "response": []
@@ -244,7 +360,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"user_id\": \"1\",\n  \"seat_id\": \"A1\"\n}"
+              "raw": "{\n  \"user_id\": \"550e8400-e29b-41d4-a716-446655440000\",\n  \"seat_id\": \"550e8400-e29b-41d4-a716-446655440001\"\n}"
             }
           },
           "response": []
@@ -254,9 +370,9 @@
           "request": {
             "method": "GET",
             "url": {
-              "raw": "{{baseUrl}}/query/availability/A1",
+              "raw": "{{baseUrl}}/query/availability/:seat_id",
               "host": ["{{baseUrl}}"],
-              "path": ["query", "availability", "A1"]
+              "path": ["query", "availability", ":seat_id"]
             }
           },
           "response": []
@@ -266,9 +382,9 @@
           "request": {
             "method": "GET",
             "url": {
-              "raw": "{{baseUrl}}/query/reservations/1",
+              "raw": "{{baseUrl}}/query/reservations/:user_id",
               "host": ["{{baseUrl}}"],
-              "path": ["query", "reservations", "1"]
+              "path": ["query", "reservations", ":user_id"]
             }
           },
           "response": []
@@ -295,7 +411,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"booking_id\": \"1\",\n  \"user_id\": \"1\",\n  \"amount\": 500\n}"
+              "raw": "{\n  \"booking_id\": \"550e8400-e29b-41d4-a716-446655440000\",\n  \"user_id\": \"550e8400-e29b-41d4-a716-446655440001\",\n  \"amount\": 500\n}"
             }
           },
           "response": []
@@ -317,7 +433,55 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"payment_id\": \"pay_123abc\",\n  \"mode\": \"success\"\n}"
+              "raw": "{\n  \"payment_id\": \"550e8400-e29b-41d4-a716-446655440099\",\n  \"mode\": \"success\"\n}"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Refund Payment",
+          "request": {
+            "method": "POST",
+            "url": {
+              "raw": "{{baseUrl}}/cmd/payments/:id/refund",
+              "host": ["{{baseUrl}}"],
+              "path": ["cmd", "payments", ":id", "refund"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Payment by ID",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/query/payments/:id",
+              "host": ["{{baseUrl}}"],
+              "path": ["query", "payments", ":id"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Payment by Booking",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/query/payments/booking/:bookingID",
+              "host": ["{{baseUrl}}"],
+              "path": ["query", "payments", "booking", ":bookingID"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Payments by User",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/query/payments/user/:userID",
+              "host": ["{{baseUrl}}"],
+              "path": ["query", "payments", "user", ":userID"]
             }
           },
           "response": []
@@ -332,9 +496,33 @@
           "request": {
             "method": "GET",
             "url": {
-              "raw": "{{baseUrl}}/query/notifications/1",
+              "raw": "{{baseUrl}}/query/notifications/:user_id",
               "host": ["{{baseUrl}}"],
-              "path": ["query", "notifications", "1"]
+              "path": ["query", "notifications", ":user_id"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Unread Notifications",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/query/notifications/:user_id/unread",
+              "host": ["{{baseUrl}}"],
+              "path": ["query", "notifications", ":user_id", "unread"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Notification by ID",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/query/notifications/single/:id",
+              "host": ["{{baseUrl}}"],
+              "path": ["query", "notifications", "single", ":id"]
             }
           },
           "response": []
@@ -360,3 +548,4 @@
     }
   ]
 }
+

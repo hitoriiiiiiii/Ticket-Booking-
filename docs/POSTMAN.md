@@ -1,73 +1,155 @@
 # Ticket Booking API - Postman Documentation
 
-This document provides comprehensive Postman collection for testing all available endpoints in the Ticket Booking API.
+This document provides comprehensive documentation for all available endpoints in the Ticket Booking API.
 
 ## Base URL
 
 ```
-http://localhost:8080
-```
-
-## Authentication
-
-### Login to get JWT Token
-
-**Endpoint:** `POST /users/login`
-
-**Request Body:**
-
-```
-json
-{
-  "email": "user@example.com",
-  "password": "yourpassword"
-}
-```
-
-**Response:**
-
-```
-json
-{
-  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
-}
-```
-
-**Note:** For protected endpoints, include the JWT token in the Authorization header:
-
-```
-Authorization: Bearer <your_token>
+http://localhost:8081
 ```
 
 ---
 
-## Health Check
+## Table of Contents
 
-### Check API Health
+- [API Endpoints Overview](#api-endpoints-overview)
+- [Command Endpoints (Write Operations)](#command-endpoints-write-operations)
+- [Query Endpoints (Read Operations)](#query-endpoints-read-operations)
+- [System Endpoints](#system-endpoints)
+- [Testing Workflow Example](#testing-workflow-example)
+- [Error Responses](#error-responses)
 
-**Endpoint:** `GET /health`
+---
 
-**Response:**
+## API Endpoints Overview
 
-```
-json
+### Command Endpoints (Write Operations)
+
+| Method | Endpoint                       | Description               |
+| ------ | ------------------------------ | ------------------------- |
+| POST   | `/cmd/reserve`                 | Reserve a ticket          |
+| POST   | `/cmd/confirm`                 | Confirm ticket booking    |
+| POST   | `/cmd/cancel`                  | Cancel ticket reservation |
+| POST   | `/cmd/users/register`          | Register new user         |
+| POST   | `/cmd/movies`                  | Create new movie          |
+| PUT    | `/cmd/movies/:id`              | Update movie              |
+| DELETE | `/cmd/movies/:id`              | Delete movie              |
+| POST   | `/cmd/shows`                   | Create new show           |
+| PUT    | `/cmd/shows/:id`               | Update show               |
+| DELETE | `/cmd/shows/:id`               | Delete show               |
+| POST   | `/cmd/payments/initiate`       | Initiate payment          |
+| POST   | `/cmd/payments/verify`         | Verify payment            |
+| POST   | `/cmd/payments/:id/refund`     | Refund payment            |
+
+### Query Endpoints (Read Operations)
+
+| Method | Endpoint                              | Description                |
+| ------ | ------------------------------------- | -------------------------- |
+| GET    | `/query/movies`                       | List all movies            |
+| GET    | `/query/movies/:id`                   | Get movie by ID           |
+| GET    | `/query/shows`                         | List all shows            |
+| GET    | `/query/shows/:id`                     | Get show by ID            |
+| GET    | `/query/shows/movie/:movieID`          | Get shows by movie        |
+| GET    | `/query/availability/:seat_id`         | Check seat availability   |
+| GET    | `/query/reservations/:user_id`         | Get user reservations     |
+| GET    | `/query/users`                         | List all users            |
+| GET    | `/query/users/:id`                     | Get user by ID            |
+| POST   | `/query/users/login`                   | User login                |
+| GET    | `/query/events`                        | Get all events            |
+| GET    | `/query/notifications/:user_id`        | Get user notifications    |
+| GET    | `/query/notifications/:user_id/unread` | Get unread notifications  |
+| GET    | `/query/notifications/single/:id`      | Get notification by ID    |
+| GET    | `/query/payments/:id`                  | Get payment by ID         |
+| GET    | `/query/payments/booking/:bookingID`   | Get payment by booking    |
+| GET    | `/query/payments/user/:userID`         | Get payments by user      |
+
+### System Endpoints
+
+| Method | Endpoint    | Description            |
+| ------ | ----------- | ---------------------- |
+| GET    | `/health`   | Health check           |
+| GET    | `/metrics`  | Prometheus metrics     |
+
+---
+
+## Command Endpoints (Write Operations)
+
+### 1. Reserve Ticket
+
+**Endpoint:** `POST /cmd/reserve`
+
+**Request Body:**
+
+```json
 {
-  "status": "ok"
+  "user_id": "550e8400-e29b-41d4-a716-446655440000",
+  "seat_id": "550e8400-e29b-41d4-a716-446655440001"
+}
+```
+
+**Response (200 OK):**
+
+```json
+{
+  "message": "Ticket Reserved"
 }
 ```
 
 ---
 
-## User Endpoints
+### 2. Confirm Ticket
 
-### 1. Register New User
-
-**Endpoint:** `POST /users/register`
+**Endpoint:** `POST /cmd/confirm`
 
 **Request Body:**
 
+```json
+{
+  "user_id": "550e8400-e29b-41d4-a716-446655440000",
+  "seat_id": "550e8400-e29b-41d4-a716-446655440001"
+}
 ```
-json
+
+**Response (200 OK):**
+
+```json
+{
+  "message": "Ticket Confirmed"
+}
+```
+
+---
+
+### 3. Cancel Ticket
+
+**Endpoint:** `POST /cmd/cancel`
+
+**Request Body:**
+
+```json
+{
+  "user_id": "550e8400-e29b-41d4-a716-446655440000",
+  "seat_id": "550e8400-e29b-41d4-a716-446655440001"
+}
+```
+
+**Response (200 OK):**
+
+```json
+{
+  "message": "Ticket Cancelled"
+}
+```
+
+---
+
+### 4. Register User
+
+**Endpoint:** `POST /cmd/users/register`
+
+**Request Body:**
+
+```json
 {
   "username": "johndoe",
   "email": "johndoe@example.com",
@@ -78,109 +160,34 @@ json
 
 **Response (201 Created):**
 
-```
-json
+```json
 {
   "id": 1,
   "username": "johndoe",
   "email": "johndoe@example.com",
-  "is_admin": false,
-  "created_at": "2024-01-15T10:30:00Z"
+  "is_admin": false
 }
 ```
 
 ---
 
-### 2. Login User
+### 5. Create Movie
 
-**Endpoint:** `POST /users/login`
+**Endpoint:** `POST /cmd/movies`
 
 **Request Body:**
 
-```
-json
+```json
 {
-  "email": "johndoe@example.com",
-  "password": "securepassword123"
+  "name": "Inception",
+  "genre": "Sci-Fi",
+  "duration": 148
 }
 ```
 
-**Response (200 OK):**
+**Response (201 Created):**
 
-```
-json
-{
-  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
-}
-```
-
----
-
-### 3. List All Users
-
-**Endpoint:** `GET /users`
-
-**Headers:**
-
-```
-Authorization: Bearer <admin_token>
-```
-
-**Response (200 OK):**
-
-```
-json
-[
-  {
-    "id": 1,
-    "username": "johndoe",
-    "email": "johndoe@example.com",
-    "is_admin": false,
-    "created_at": "2024-01-15T10:30:00Z"
-  }
-]
-```
-
----
-
-## Movie Endpoints
-
-### 4. Get All Movies
-
-**Endpoint:** `GET /movies`
-
-**Response (200 OK):**
-
-```
-json
-[
-  {
-    "id": 1,
-    "name": "Inception",
-    "genre": "Sci-Fi",
-    "duration": 148
-  },
-  {
-    "id": 2,
-    "name": "The Dark Knight",
-    "genre": "Action",
-    "duration": 152
-  }
-]
-```
-
----
-
-### 5. Get Single Movie
-
-**Endpoint:** `GET /movies/:id`
-
-**Example:** `GET /movies/1`
-
-**Response (200 OK):**
-
-```
-json
+```json
 {
   "id": 1,
   "name": "Inception",
@@ -189,62 +196,225 @@ json
 }
 ```
 
-**Error Response (404 Not Found):**
+---
 
-```
-json
+### 6. Update Movie
+
+**Endpoint:** `PUT /cmd/movies/:id`
+
+**Request Body:**
+
+```json
 {
-  "error": "Movie not found"
+  "name": "Inception",
+  "genre": "Sci-Fi",
+  "duration": 150
+}
+```
+
+**Response (200 OK):**
+
+```json
+{
+  "message": "Movie updated successfully"
 }
 ```
 
 ---
 
-### 6. Create New Movie
+### 7. Delete Movie
 
-**Endpoint:** `POST /movies`
+**Endpoint:** `DELETE /cmd/movies/:id`
 
-**Headers:**
+**Response (200 OK):**
 
+```json
+{
+  "message": "Movie deleted successfully"
+}
 ```
-Authorization: Bearer <admin_token>
-```
+
+---
+
+### 8. Create Show
+
+**Endpoint:** `POST /cmd/shows`
 
 **Request Body:**
 
-```
-json
+```json
 {
-  "name": "Interstellar",
-  "genre": "Sci-Fi",
-  "duration": 169
+  "movie_id": 1,
+  "theater": "Theater A",
+  "start_time": "2024-01-20T14:00:00Z"
 }
 ```
 
 **Response (201 Created):**
 
-```
-json
+```json
 {
-  "id": 3,
-  "name": "Interstellar",
-  "genre": "Sci-Fi",
-  "duration": 169
+  "id": 1,
+  "movie_id": 1,
+  "theater": "Theater A",
+  "start_time": "2024-01-20T14:00:00Z",
+  "end_time": "2024-01-20T16:30:00Z"
 }
 ```
 
 ---
 
-## Show Endpoints
+### 9. Update Show
 
-### 7. Get All Shows
+**Endpoint:** `PUT /cmd/shows/:id`
 
-**Endpoint:** `GET /shows`
+**Request Body:**
+
+```json
+{
+  "movie_id": 1,
+  "theater": "Theater A",
+  "start_time": "2024-01-20T14:00:00Z",
+  "end_time": "2024-01-20T16:30:00Z"
+}
+```
 
 **Response (200 OK):**
 
+```json
+{
+  "message": "Show updated successfully"
+}
 ```
-json
+
+---
+
+### 10. Delete Show
+
+**Endpoint:** `DELETE /cmd/shows/:id`
+
+**Response (200 OK):**
+
+```json
+{
+  "message": "Show deleted successfully"
+}
+```
+
+---
+
+### 11. Initiate Payment
+
+**Endpoint:** `POST /cmd/payments/initiate`
+
+**Request Body:**
+
+```json
+{
+  "booking_id": "550e8400-e29b-41d4-a716-446655440000",
+  "user_id": "550e8400-e29b-41d4-a716-446655440001",
+  "amount": 500
+}
+```
+
+**Response (200 OK):**
+
+```json
+{
+  "id": "pay_123abc",
+  "booking_id": "550e8400-e29b-41d4-a716-446655440000",
+  "user_id": "550e8400-e29b-41d4-a716-446655440001",
+  "amount": 500,
+  "status": "PENDING"
+}
+```
+
+---
+
+### 12. Verify Payment
+
+**Endpoint:** `POST /cmd/payments/verify`
+
+**Request Body:**
+
+```json
+{
+  "payment_id": "550e8400-e29b-41d4-a716-446655440099",
+  "mode": "success"
+}
+```
+
+**Note:** `mode` can be: `success`, `fail`, or `random`
+
+**Response (200 OK):**
+
+```json
+{
+  "status": "Payment verification completed"
+}
+```
+
+---
+
+### 13. Refund Payment
+
+**Endpoint:** `POST /cmd/payments/:id/refund`
+
+**Response (200 OK):**
+
+```json
+{
+  "status": "Payment refund completed"
+}
+```
+
+---
+
+## Query Endpoints (Read Operations)
+
+### 14. List Movies
+
+**Endpoint:** `GET /query/movies`
+
+**Response (200 OK):**
+
+```json
+[
+  {
+    "id": 1,
+    "name": "Inception",
+    "genre": "Sci-Fi",
+    "duration": 148
+  }
+]
+```
+
+---
+
+### 15. Get Movie by ID
+
+**Endpoint:** `GET /query/movies/:id`
+
+**Response (200 OK):**
+
+```json
+{
+  "id": 1,
+  "name": "Inception",
+  "genre": "Sci-Fi",
+  "duration": 148
+}
+```
+
+---
+
+### 16. List Shows
+
+**Endpoint:** `GET /query/shows`
+
+**Response (200 OK):**
+
+```json
 [
   {
     "id": 1,
@@ -258,35 +428,15 @@ json
 
 ---
 
-### 8. Create New Show
+### 17. Get Show by ID
 
-**Endpoint:** `POST /shows`
+**Endpoint:** `GET /query/shows/:id`
 
-**Headers:**
+**Response (200 OK):**
 
-```
-Authorization: Bearer <admin_token>
-```
-
-**Request Body:**
-
-```
-json
+```json
 {
-  "movie_id": 1,
-  "theater": "Theater A",
-  "start_time": "2024-01-20T14:00:00Z"
-}
-```
-
-**Note:** The `end_time` is automatically calculated based on the movie duration.
-
-**Response (201 Created):**
-
-```
-json
-{
-  "id": 2,
+  "id": 1,
   "movie_id": 1,
   "theater": "Theater A",
   "start_time": "2024-01-20T14:00:00Z",
@@ -296,239 +446,152 @@ json
 
 ---
 
-## Booking Endpoints
+### 18. Get Shows by Movie
 
-### 9. Reserve Ticket
-
-**Endpoint:** `POST /reserve`
-
-**Request Body:**
-
-```
-json
-{
-  "user_id": "1",
-  "seat_id": "A1"
-}
-```
+**Endpoint:** `GET /query/shows/movie/:movieID`
 
 **Response (200 OK):**
 
-```
-json
-{
-  "message": "Ticket Reserved"
-}
-```
-
-**Error Response (409 Conflict):**
-
-```
-json
-{
-  "error": "Seat already reserved"
-}
-```
-
----
-
-### 10. Confirm Ticket Booking
-
-**Endpoint:** `POST /confirm`
-
-**Request Body:**
-
-```
-json
-{
-  "user_id": "1",
-  "seat_id": "A1"
-}
-```
-
-**Response (200 OK):**
-
-```
-json
-{
-  "message": "Ticket Confirmed"
-}
-```
-
-**Error Response (409 Conflict):**
-
-```
-json
-{
-  "error": "Seat not held or already booked"
-}
-```
-
----
-
-### 11. Cancel Ticket Reservation
-
-**Endpoint:** `POST /cancel`
-
-**Request Body:**
-
-```
-json
-{
-  "user_id": "1",
-  "seat_id": "A1"
-}
-```
-
-**Response (200 OK):**
-
-```
-json
-{
-  "message": "Ticket Cancelled"
-}
-```
-
-**Error Response (404 Not Found):**
-
-```
-json
-{
-  "error": "No reservation found"
-}
-```
-
----
-
-### 12. Check Seat Availability
-
-**Endpoint:** `GET /availability/:seat_id`
-
-**Example:** `GET /availability/A1`
-
-**Response (200 OK):**
-
-```
-json
-{
-  "seat_id": "A1",
-  "status": "AVAILABLE"
-}
-```
-
-Or if reserved:
-
-```
-json
-{
-  "seat_id": "A1",
-  "status": "HELD"
-}
-```
-
----
-
-### 13. Get All Events (Admin)
-
-**Endpoint:** `GET /events`
-
-**Headers:**
-
-```
-Authorization: Bearer <admin_token>
-```
-
-**Response (200 OK):**
-
-```
-json
+```json
 [
   {
-    "seat_id": "A1",
-    "type": "TicketReserved",
-    "payload": "{\"UserID\":\"1\",\"SeatID\":\"A1\"}",
-    "time": "2024-01-15T10:30:00Z"
+    "id": 1,
+    "movie_id": 1,
+    "theater": "Theater A",
+    "start_time": "2024-01-20T14:00:00Z"
   }
 ]
 ```
 
 ---
 
-## Payment Endpoints
+### 19. Check Seat Availability
 
-### 14. Initiate Payment
-
-**Endpoint:** `POST /payments/initiate`
-
-**Request Body:**
-
-```
-json
-{
-  "booking_id": "1",
-  "user_id": "1",
-  "amount": 500
-}
-```
+**Endpoint:** `GET /query/availability/:seat_id`
 
 **Response (200 OK):**
 
-```
-json
+```json
 {
-  "id": "pay_123abc",
-  "booking_id": "1",
-  "user_id": "1",
-  "amount": 500,
-  "status": "PENDING"
+  "seat_id": "550e8400-e29b-41d4-a716-446655440001",
+  "status": "AVAILABLE"
 }
 ```
 
 ---
 
-### 15. Verify Payment
+### 20. Get User Reservations
 
-**Endpoint:** `POST /payments/verify`
-
-**Request Body:**
-
-```
-json
-{
-  "payment_id": "pay_123abc",
-  "mode": "success"
-}
-```
-
-**Note:** `mode` can be: `success`, `fail`, or `random`
+**Endpoint:** `GET /query/reservations/:user_id`
 
 **Response (200 OK):**
 
-```
-json
-{
-  "status": "Payment verification completed"
-}
-```
-
----
-
-## Notification Endpoints
-
-### 16. Get User Notifications
-
-**Endpoint:** `GET /notifications/:user_id`
-
-**Example:** `GET /notifications/1`
-
-**Response (200 OK):**
-
-```
-json
+```json
 [
   {
     "id": 1,
-    "user_id": "1",
+    "user_id": "550e8400-e29b-41d4-a716-446655440000",
+    "seat_id": "550e8400-e29b-41d4-a716-446655440001",
+    "status": "BOOKED"
+  }
+]
+```
+
+---
+
+### 21. List Users
+
+**Endpoint:** `GET /query/users`
+
+**Response (200 OK):**
+
+```json
+[
+  {
+    "id": 1,
+    "username": "johndoe",
+    "email": "johndoe@example.com",
+    "is_admin": false
+  }
+]
+```
+
+---
+
+### 22. Get User by ID
+
+**Endpoint:** `GET /query/users/:id`
+
+**Response (200 OK):**
+
+```json
+{
+  "id": 1,
+  "username": "johndoe",
+  "email": "johndoe@example.com",
+  "is_admin": false
+}
+```
+
+---
+
+### 23. User Login
+
+**Endpoint:** `POST /query/users/login`
+
+**Request Body:**
+
+```json
+{
+  "email": "johndoe@example.com",
+  "password": "securepassword123"
+}
+```
+
+**Response (200 OK):**
+
+```json
+{
+  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+}
+```
+
+---
+
+### 24. Get All Events
+
+**Endpoint:** `GET /query/events`
+
+**Response (200 OK):**
+
+```json
+[
+  {
+    "id": 1,
+    "aggregate_id": "550e8400-e29b-41d4-a716-446655440000",
+    "event_type": "TicketReserved",
+    "payload": {
+      "user_id": "550e8400-e29b-41d4-a716-446655440000",
+      "seat_id": "550e8400-e29b-41d4-a716-446655440001"
+    },
+    "created_at": "2024-01-15T10:30:00Z"
+  }
+]
+```
+
+---
+
+### 25. Get User Notifications
+
+**Endpoint:** `GET /query/notifications/:user_id`
+
+**Response (200 OK):**
+
+```json
+[
+  {
+    "id": 1,
+    "user_id": "550e8400-e29b-41d4-a716-446655440000",
     "message": "Your ticket has been confirmed!",
     "type": "booking_confirmation",
     "created_at": "2024-01-15T10:30:00Z",
@@ -539,78 +602,206 @@ json
 
 ---
 
+### 26. Get Unread Notifications
+
+**Endpoint:** `GET /query/notifications/:user_id/unread`
+
+**Response (200 OK):**
+
+```json
+[
+  {
+    "id": 1,
+    "user_id": "550e8400-e29b-41d4-a716-446655440000",
+    "message": "Your ticket has been confirmed!",
+    "type": "booking_confirmation",
+    "created_at": "2024-01-15T10:30:00Z",
+    "read": false
+  }
+]
+```
+
+---
+
+### 27. Get Notification by ID
+
+**Endpoint:** `GET /query/notifications/single/:id`
+
+**Response (200 OK):**
+
+```json
+{
+  "id": 1,
+  "user_id": "550e8400-e29b-41d4-a716-446655440000",
+  "message": "Your ticket has been confirmed!",
+  "type": "booking_confirmation",
+  "created_at": "2024-01-15T10:30:00Z",
+  "read": false
+}
+```
+
+---
+
+### 28. Get Payment by ID
+
+**Endpoint:** `GET /query/payments/:id`
+
+**Response (200 OK):**
+
+```json
+{
+  "id": "550e8400-e29b-41d4-a716-446655440099",
+  "booking_id": "550e8400-e29b-41d4-a716-446655440000",
+  "user_id": "550e8400-e29b-41d4-a716-446655440001",
+  "amount": 500,
+  "status": "COMPLETED"
+}
+```
+
+---
+
+### 29. Get Payment by Booking
+
+**Endpoint:** `GET /query/payments/booking/:bookingID`
+
+**Response (200 OK):**
+
+```json
+{
+  "id": "550e8400-e29b-41d4-a716-446655440099",
+  "booking_id": "550e8400-e29b-41d4-a716-446655440000",
+  "user_id": "550e8400-e29b-41d4-a716-446655440001",
+  "amount": 500,
+  "status": "COMPLETED"
+}
+```
+
+---
+
+### 30. Get Payments by User
+
+**Endpoint:** `GET /query/payments/user/:userID`
+
+**Response (200 OK):**
+
+```json
+[
+  {
+    "id": "550e8400-e29b-41d4-a716-446655440099",
+    "booking_id": "550e8400-e29b-41d4-a716-446655440000",
+    "user_id": "550e8400-e29b-41d4-a716-446655440001",
+    "amount": 500,
+    "status": "COMPLETED"
+  }
+]
+```
+
+---
+
+## System Endpoints
+
+### 31. Health Check
+
+**Endpoint:** `GET /health`
+
+**Response (200 OK):**
+
+```json
+{
+  "status": "healthy"
+}
+```
+
+---
+
+### 32. Prometheus Metrics
+
+**Endpoint:** `GET /metrics`
+
+**Response:** Prometheus metrics in text format
+
+---
+
 ## Testing Workflow Example
 
 Here's a typical workflow for testing the booking system:
 
-1. **Register a new user**
+```bash
+# 1. Register a new user
+POST /cmd/users/register
+{
+  "username": "johndoe",
+  "email": "johndoe@example.com",
+  "password": "securepassword123",
+  "is_admin": false
+}
 
-```
-   POST /users/register
+# 2. Login to get token
+POST /query/users/login
+{
+  "email": "johndoe@example.com",
+  "password": "securepassword123"
+}
 
-```
+# 3. View available movies
+GET /query/movies
 
-2. **Login to get token**
+# 4. Create a movie
+POST /cmd/movies
+{
+  "name": "Inception",
+  "genre": "Sci-Fi",
+  "duration": 148
+}
 
-```
-   POST /users/login
+# 5. Create a show
+POST /cmd/shows
+{
+  "movie_id": 1,
+  "theater": "Theater A",
+  "start_time": "2024-01-20T14:00:00Z"
+}
 
-```
+# 6. View shows
+GET /query/shows
 
-3. **View available movies**
+# 7. Check seat availability
+GET /query/availability/550e8400-e29b-41d4-a716-446655440001
 
-```
-   GET /movies
+# 8. Reserve a ticket
+POST /cmd/reserve
+{
+  "user_id": "550e8400-e29b-41d4-a716-446655440000",
+  "seat_id": "550e8400-e29b-41d4-a716-446655440001"
+}
 
-```
+# 9. Confirm the booking
+POST /cmd/confirm
+{
+  "user_id": "550e8400-e29b-41d4-a716-446655440000",
+  "seat_id": "550e8400-e29b-41d4-a716-446655440001"
+}
 
-4. **Create a show**
+# 10. Initiate payment
+POST /cmd/payments/initiate
+{
+  "booking_id": "550e8400-e29b-41d4-a716-446655440000",
+  "user_id": "550e8400-e29b-41d4-a716-446655440001",
+  "amount": 500
+}
 
-```
-   POST /shows (with admin token)
+# 11. Verify payment
+POST /cmd/payments/verify
+{
+  "payment_id": "550e8400-e29b-41d4-a716-446655440099",
+  "mode": "success"
+}
 
-```
+# 12. Check user reservations
+GET /query/reservations/550e8400-e29b-41d4-a716-446655440000
 
-5. **Check seat availability**
-
-```
-   GET /availability/A1
-
-```
-
-6. **Reserve a ticket**
-
-```
-   POST /reserve
-
-```
-
-7. **Confirm the booking**
-
-```
-   POST /confirm
-
-```
-
-8. **Initiate payment**
-
-```
-   POST /payments/initiate
-
-```
-
-9. **Verify payment**
-
-```
-   POST /payments/verify
-
-```
-
-10. **Check notifications**
-
-```
-    GET /notifications/:user_id
-
+# 13. Check notifications
+GET /query/notifications/550e8400-e29b-41d4-a716-446655440000
 ```
 
 ---
@@ -633,9 +824,21 @@ The API returns standard HTTP status codes:
 
 ## Environment Variables
 
-Make sure to set up your environment variables in Postman:
+Make sure to set up your environment variables:
 
 ```
 DATABASE_URL=postgres://user:password@localhost:5432/ticket_booking
-PORT=8080
+PORT=8081
+REDIS_URL=redis://localhost:6379
 ```
+
+---
+
+## Importing Postman Collection
+
+1. Open Postman
+2. Click "Import" button
+3. Select the `postman-collection.json` file from the `docs/` folder
+4. The collection will be imported with all endpoints
+5. Set the `baseUrl` variable to `http://localhost:8081`
+

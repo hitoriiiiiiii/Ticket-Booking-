@@ -15,35 +15,32 @@ import (
 
 type ReservationProjection struct {
 	DB         *pgxpool.Pool
+	CmdDB      *pgxpool.Pool
 	EventStore *events.Store
 }
 
-func NewReservationProjection(db *pgxpool.Pool, eventStore *events.Store) *ReservationProjection {
-	return &ReservationProjection{DB: db, EventStore: eventStore}
+func NewReservationProjection(db *pgxpool.Pool, cmdDB *pgxpool.Pool, eventStore *events.Store) *ReservationProjection {
+	return &ReservationProjection{DB: db, CmdDB: cmdDB, EventStore: eventStore}
 }
 
 func (p *ReservationProjection) Run() {
 	// Wait a bit for database to be ready
-	time.Sleep(5 * time.Second)
+	time.Sleep(2 * time.Second)
 
 	// Get last processed event ID
-	var lastEventID *string
+	var lastEventID string
 	err := p.DB.QueryRow(context.Background(),
-		"SELECT last_event_id FROM projection_state WHERE id = 1",
+		"SELECT COALESCE(last_event_id, '') FROM projection_state WHERE id = 1",
 	).Scan(&lastEventID)
 	if err != nil {
 		log.Println("Failed to get projection state:", err)
 		return
 	}
 
-	// Build query for incremental processing
+	// Build query for incremental processing - read from Command DB
 	query := "SELECT id, aggregate_id, event_type, payload FROM events WHERE id > $1 ORDER BY id"
 	var rows pgx.Rows
-	if lastEventID == nil {
-		rows, err = p.DB.Query(context.Background(), query, "")
-	} else {
-		rows, err = p.DB.Query(context.Background(), query, *lastEventID)
-	}
+	rows, err = p.CmdDB.Query(context.Background(), query, lastEventID)
 	if err != nil {
 		log.Fatal("Failed to query events:", err)
 	}
@@ -138,8 +135,8 @@ func (p *ReservationProjection) Run() {
 }
 
 // StartProjectionWorker starts the projection worker in a goroutine
-func StartProjectionWorker(db *pgxpool.Pool, eventStore *events.Store) {
-	projection := NewReservationProjection(db, eventStore)
+func StartProjectionWorker(db *pgxpool.Pool, cmdDB *pgxpool.Pool, eventStore *events.Store) {
+	projection := NewReservationProjection(db, cmdDB, eventStore)
 	go func() {
 		for {
 			projection.Run()

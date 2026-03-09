@@ -606,35 +606,50 @@ http://localhost:8081
 
 ### Command Endpoints (Write Operations)
 
-| Method | Endpoint                 | Description               | Request Body                                                                                  |
-| ------ | ------------------------ | ------------------------- | --------------------------------------------------------------------------------------------- |
-| POST   | `/cmd/reserve`           | Reserve a ticket          | `{"user_id": "1", "seat_id": "A1"}`                                                           |
-| POST   | `/cmd/confirm`           | Confirm ticket booking    | `{"user_id": "1", "seat_id": "A1"}`                                                           |
-| POST   | `/cmd/cancel`            | Cancel ticket reservation | `{"user_id": "1", "seat_id": "A1"}`                                                           |
-| POST   | `/cmd/users/register`    | Register new user         | `{"username": "john", "email": "john@example.com", "password": "pass123", "is_admin": false}` |
-| POST   | `/cmd/movies`            | Create new movie          | `{"name": "Inception", "genre": "Sci-Fi", "duration": 148}`                                   |
-| POST   | `/cmd/shows`             | Create new show           | `{"movie_id": 1, "theater": "Theater A", "start_time": "2024-01-20T14:00:00Z"}`               |
-| POST   | `/cmd/payments/initiate` | Initiate payment          | `{"booking_id": "1", "user_id": "1", "amount": 500}`                                          |
-| POST   | `/cmd/payments/verify`   | Verify payment            | `{"payment_id": "pay_xxx", "mode": "success"}`                                                |
+| Method | Endpoint                       | Description               | Request Body                                                                                  |
+| ------ | ------------------------------ | ------------------------- | ---------------------------------------------------------------------------------------------- |
+| POST   | `/cmd/reserve`                 | Reserve a ticket          | `{"user_id": "uuid", "seat_id": "uuid"}`                                                       |
+| POST   | `/cmd/confirm`                 | Confirm ticket booking    | `{"user_id": "uuid", "seat_id": "uuid"}`                                                       |
+| POST   | `/cmd/cancel`                  | Cancel ticket reservation | `{"user_id": "uuid", "seat_id": "uuid"}`                                                       |
+| POST   | `/cmd/users/register`          | Register new user         | `{"username": "john", "email": "john@example.com", "password": "pass123", "is_admin": false}` |
+| POST   | `/cmd/movies`                  | Create new movie          | `{"name": "Inception", "genre": "Sci-Fi", "duration": 148}`                                   |
+| PUT    | `/cmd/movies/:id`              | Update movie              | `{"name": "Inception", "genre": "Sci-Fi", "duration": 150}`                                  |
+| DELETE | `/cmd/movies/:id`              | Delete movie              | -                                                                                              |
+| POST   | `/cmd/shows`                   | Create new show           | `{"movie_id": 1, "theater": "Theater A", "start_time": "2024-01-20T14:00:00Z"}`             |
+| PUT    | `/cmd/shows/:id`               | Update show               | `{"movie_id": 1, "theater": "Theater A", "start_time": "2024-01-20T14:00:00Z"}`             |
+| DELETE | `/cmd/shows/:id`               | Delete show               | -                                                                                              |
+| POST   | `/cmd/payments/initiate`       | Initiate payment          | `{"booking_id": "uuid", "user_id": "uuid", "amount": 500}`                                   |
+| POST   | `/cmd/payments/verify`         | Verify payment            | `{"payment_id": "uuid", "mode": "success"}`                                                   |
+| POST   | `/cmd/payments/:id/refund`     | Refund payment            | -                                                                                              |
 
 ### Query Endpoints (Read Operations)
 
-| Method | Endpoint                        | Description             |
-| ------ | ------------------------------- | ----------------------- |
-| GET    | `/query/movies`                 | List all movies         |
-| GET    | `/query/movies/:id`             | Get movie by ID         |
-| GET    | `/query/shows`                  | List all shows          |
-| GET    | `/query/availability/:seat_id`  | Check seat availability |
-| GET    | `/query/reservations/:user_id`  | Get user reservations   |
-| GET    | `/query/users`                  | List all users          |
-| GET    | `/query/events`                 | Get all events          |
-| GET    | `/query/notifications/:user_id` | Get user notifications  |
+| Method | Endpoint                              | Description                | Parameters        |
+| ------ | ------------------------------------- | -------------------------- | ------------------|
+| GET    | `/query/movies`                       | List all movies            | -                 |
+| GET    | `/query/movies/:id`                   | Get movie by ID           | id (path)         |
+| GET    | `/query/shows`                         | List all shows            | -                 |
+| GET    | `/query/shows/:id`                     | Get show by ID            | id (path)         |
+| GET    | `/query/shows/movie/:movieID`          | Get shows by movie        | movieID (path)    |
+| GET    | `/query/availability/:seat_id`         | Check seat availability   | seat_id (path)    |
+| GET    | `/query/reservations/:user_id`         | Get user reservations     | user_id (path)    |
+| GET    | `/query/users`                         | List all users            | -                 |
+| GET    | `/query/users/:id`                     | Get user by ID            | id (path)         |
+| POST   | `/query/users/login`                   | User login                | email, password   |
+| GET    | `/query/events`                        | Get all events            | -                 |
+| GET    | `/query/notifications/:user_id`        | Get user notifications    | user_id (path)    |
+| GET    | `/query/notifications/:user_id/unread` | Get unread notifications  | user_id (path)    |
+| GET    | `/query/notifications/single/:id`     | Get notification by ID    | id (path)         |
+| GET    | `/query/payments/:id`                 | Get payment by ID         | id (path)         |
+| GET    | `/query/payments/booking/:bookingID`   | Get payment by booking    | bookingID (path)  |
+| GET    | `/query/payments/user/:userID`         | Get payments by user      | userID (path)     |
 
 ### System Endpoints
 
-| Method | Endpoint  | Description  |
-| ------ | --------- | ------------ |
-| GET    | `/health` | Health check |
+| Method | Endpoint    | Description            |
+| ------ | ----------- | ---------------------- |
+| GET    | `/health`   | Health check           |
+| GET    | `/metrics`  | Prometheus metrics     |
 
 ---
 
