@@ -2,9 +2,11 @@ package main
 
 import (
 	"log"
+	"net/http"
 	"os"
 	"time"
 
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/hitorii/ticket-booking/internal/booking"
 	"github.com/hitorii/ticket-booking/internal/config"
 	"github.com/hitorii/ticket-booking/internal/db"
@@ -47,6 +49,15 @@ func main() {
 	}
 
 	log.Println("📊 Starting projection worker...")
+
+	// Start metrics server on port 8082
+	go func() {
+		http.Handle("/metrics", promhttp.Handler())
+		log.Println("📈 Worker metrics server running on port 8082")
+		if err := http.ListenAndServe(":8082", nil); err != nil {
+			log.Printf("❌ Metrics server error: %v", err)
+		}
+	}()
 
 	for {
 		projection.Run()

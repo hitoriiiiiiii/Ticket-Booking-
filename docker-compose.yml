@@ -193,8 +193,87 @@ services:
     networks:
       - ticket-booking-network
 
+  # ==================== MONITORING STACK ====================
+
+  prometheus:
+    image: prom/prometheus:v2.47.0
+    container_name: ticket-prometheus
+    restart: always
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml
+      - ./monitoring/prometheus-data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/usr/share/prometheus/console_libraries'
+      - '--web.console.templates=/usr/share/prometheus/consoles'
+      - '--storage.tsdb.retention.time=15d'
+    ports:
+      - '9090:9090'
+    networks:
+      - ticket-booking-network
+
+  grafana:
+    image: grafana/grafana:10.1.0
+    container_name: ticket-grafana
+    restart: always
+    environment:
+      GF_SECURITY_ADMIN_USER: 'admin'
+      GF_SECURITY_ADMIN_PASSWORD: 'admin'
+      GF_USERS_ALLOW_SIGN_UP: 'false'
+    volumes:
+      - ./monitoring/provisioning:/etc/grafana/provisioning
+      - ./monitoring/dashboards:/var/lib/grafana/dashboards
+      - ./monitoring/grafana-data:/var/lib/grafana
+    ports:
+      - '3000:3000'
+    depends_on:
+      - prometheus
+    networks:
+      - ticket-booking-network
+
+  # Redis Exporter
+  redis-exporter:
+    image: oliver006/redis_exporter:v1.54.0
+    container_name: ticket-redis-exporter
+    restart: always
+    environment:
+      REDIS_ADDR: 'redis://redis:6379'
+    ports:
+      - '9121:9121'
+    networks:
+      - ticket-booking-network
+
+  # PostgreSQL Exporter
+  postgres-exporter:
+    image: quay.io/prometheuscommunity/postgres-exporter:v0.15.0
+    container_name: ticket-postgres-exporter
+    restart: always
+    environment:
+      DATA_SOURCE_NAME: 'postgresql://ticket:ticket123@postgres_cmd:5432/ticket_cmd_db?sslmode=disable'
+    ports:
+      - '9187:9187'
+    networks:
+      - ticket-booking-network
+
+  # Node Exporter for system metrics
+  node-exporter:
+    image: prom/node-exporter:v1.6.1
+    container_name: ticket-node-exporter
+    restart: always
+    command:
+      - '--path.procfs=/host/proc'
+      - '--path.rootfs=/rootfs'
+      - '--path.sysfs=/host/sys'
+      - '--collector.filesystem.mount-points-exclude=^/(sys|proc|dev|host|etc)($$|/)'
+    ports:
+      - '9100:9100'
+    networks:
+      - ticket-booking-network
+
 # NETWORK
 
 networks:
   ticket-booking-network:
     driver: bridge
+

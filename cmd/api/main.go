@@ -6,11 +6,13 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 
 	"github.com/hitorii/ticket-booking/internal/booking"
 	"github.com/hitorii/ticket-booking/internal/config"
 	"github.com/hitorii/ticket-booking/internal/db"
 	"github.com/hitorii/ticket-booking/internal/events"
+	"github.com/hitorii/ticket-booking/internal/metrics"
 	"github.com/hitorii/ticket-booking/internal/middleware"
 	"github.com/hitorii/ticket-booking/internal/movie"
 	"github.com/hitorii/ticket-booking/internal/payments"
@@ -27,6 +29,9 @@ func main() {
 	}
 
 	r := gin.Default()
+	
+	// Apply metrics middleware
+	r.Use(metrics.GinMiddleware())
 	
 	// Apply rate limiter - allow 5000 requests per minute for 50K users scaling
 	r.Use(middleware.RateLimit(5000))
@@ -108,6 +113,9 @@ func main() {
 	r.GET("/health", func(c *gin.Context) {
 		c.JSON(200, gin.H{"status": "healthy"})
 	})
+
+	// Prometheus metrics endpoint
+	r.GET("/metrics", gin.WrapH(promhttp.Handler()))
 
 	projection := &booking.ReservationProjection{
 		DB:         queryDB,
